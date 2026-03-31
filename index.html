@@ -69,7 +69,7 @@
         }
     </style>
 </head>
-<body class="bg-gray-800 h-screen w-screen flex justify-center items-center font-sans overflow-hidden">
+<body class="bg-gray-800 h-screen w-screen flex justify-center items-center font-sans overflow-hidden relative">
 
     <!-- 主容器 -->
     <div class="w-full h-full max-w-3xl sm:h-[95vh] sm:rounded-[3rem] sm:border-[12px] border-gray-900 bg-[#7BA3B8] flex flex-col relative overflow-hidden shadow-2xl">
@@ -94,7 +94,9 @@
                     <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
                 </label>
                 <!-- 下載/儲存 Icon -->
-                <svg id="downloadBtn" class="w-6 h-6 md:w-8 md:h-8 touch-active cursor-pointer" title="下載對話紀錄" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <button id="downloadBtn" class="touch-active cursor-pointer" title="下載對話紀錄">
+                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                </button>
                 
                 <!-- 群組人員 / 鎖定狀態 Icon -->
                 <div id="memberBtn" class="touch-active cursor-pointer relative" onclick="handleMemberBtnClick()" title="選擇發言人">
@@ -124,14 +126,16 @@
             <div class="flex-1 bg-white rounded-full flex items-center px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 shadow-sm transition-all focus-within:border-[#06C755] focus-within:ring-2 focus-within:ring-[#06C755]/20 relative">
                 
                 <!-- 顯示目前是誰在打字的小頭像 -->
-                <div id="currentAvatarIndicator" class="w-7 h-7 md:w-9 md:h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm md:text-lg flex-shrink-0 border border-gray-200 mr-2" title="目前發言身分">
+                <div id="currentAvatarIndicator" class="w-7 h-7 md:w-9 md:h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm md:text-lg flex-shrink-0 border border-gray-200 mr-2 overflow-hidden" title="目前發言身分">
                     👦
                 </div>
 
                 <input type="text" id="chatInput" class="w-full bg-transparent outline-none text-base md:text-xl" placeholder="輸入訊息...">
                 
                 <!-- Emoji 按鈕 -->
-                <svg id="emojiBtn" class="w-6 h-6 md:w-8 md:h-8 text-gray-400 cursor-pointer ml-1 flex-shrink-0 hover:text-yellow-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <button id="emojiBtn" class="ml-1 flex-shrink-0 hover:text-yellow-500 transition-colors">
+                    <svg class="w-6 h-6 md:w-8 md:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </button>
                 
                 <!-- 擴充版：表情貼圖彈出視窗 (加入高度限制與滾動條) -->
                 <div id="emojiPicker" class="hidden absolute bottom-[120%] right-0 bg-white rounded-2xl shadow-xl border border-gray-200 p-3 w-72 md:w-96 h-80 overflow-y-auto z-50 animate-pop-in">
@@ -146,7 +150,7 @@
             </button>
         </div>
 
-        <!-- 虛擬鍵盤容器 (改為注音 ㄅㄆㄇ 版面，分為 11 欄) -->
+        <!-- 虛擬鍵盤容器 -->
         <div id="virtualKeyboard" class="hidden bg-[#D1D5DB] p-2 md:p-4 flex-col gap-1 md:gap-2 shadow-[inset_0_4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
             <div class="flex justify-between items-center mb-1 px-1">
                 <span class="text-xs text-gray-600 font-bold">注音虛擬鍵盤 (輔助拼音使用，選字建議使用系統鍵盤或語音)</span>
@@ -160,53 +164,72 @@
             </div>
         </div>
 
-        <!-- ================= 角色選擇與鎖定 Modal ================= -->
-        <div id="memberModal" class="hidden absolute inset-0 bg-black/60 z-50 flex justify-center items-end sm:items-center backdrop-blur-sm transition-opacity">
-            <div class="bg-white rounded-t-3xl sm:rounded-3xl p-6 w-full sm:w-[85%] max-w-md shadow-2xl animate-pop-in">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">選擇發言角色</h2>
-                    <button onclick="closeMemberModal()" class="text-gray-500 hover:text-gray-800">
-                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                    </button>
-                </div>
-                
-                <p class="text-sm text-gray-500 mb-4">點選頭像後將鎖定您的身分，其他人無法更改。</p>
-
-                <!-- 名單列表 -->
-                <div id="modalSpeakerList" class="grid grid-cols-4 gap-y-6 gap-x-2 max-h-[50vh] overflow-y-auto p-2">
-                    <!-- Javascript 動態產生 -->
-                </div>
+        <!-- ================= 右側滑出式角色名單側邊欄 ================= -->
+        <div id="memberSidebar" class="absolute top-0 right-0 h-full w-full sm:w-80 bg-white shadow-[auto_0_25px_50px_-12px_rgba(0,0,0,0.5)] z-50 transform translate-x-full transition-transform duration-300 flex flex-col rounded-r-[2rem] sm:rounded-none">
+            <!-- Sidebar Header -->
+            <div class="p-4 md:p-5 border-b flex justify-between items-center bg-gray-50 rounded-tr-[2rem] sm:rounded-none">
+                <h2 class="text-xl font-bold text-gray-800">名單管理</h2>
+                <button onclick="closeMemberSidebar()" class="text-gray-500 hover:text-gray-800 p-1 bg-white rounded-full shadow-sm border border-gray-200 active:scale-95">
+                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                </button>
             </div>
+            
+            <!-- 提示說明 -->
+            <div class="px-4 pt-3 pb-1 text-xs text-gray-500">
+                點擊<span class="font-bold text-gray-700">頭像</span>可上傳圖片；點擊<span class="font-bold text-gray-700">名稱</span>可直接修改。鎖定後即無法變更身分。
+            </div>
+
+            <!-- 名單列表 -->
+            <div id="sidebarSpeakerList" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
+                <!-- Javascript 動態產生 -->
+            </div>
+            
+            <!-- Footer: 新增按鈕 -->
+            <div class="p-4 border-t bg-gray-50 pb-8 sm:pb-4">
+                <button onclick="addNewSpeaker()" class="w-full py-3 md:py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-95">
+                    <span class="text-xl">➕</span> <span>新增成員</span>
+                </button>
+            </div>
+            
+            <!-- 隱藏的圖片上傳器 -->
+            <input type="file" id="avatarUploader" class="hidden" accept="image/*">
         </div>
+        
+        <!-- 側邊欄展開時的背景遮罩 -->
+        <div id="sidebarOverlay" class="absolute inset-0 bg-black/40 z-40 hidden transition-opacity" onclick="closeMemberSidebar()"></div>
 
     </div>
 
     <script>
-        // ================= 狀態資料 =================
+        // ================= 狀態資料 (全域) =================
         let chatTitle = "春日部防衛隊";
         let isLocked = false; 
         
         let speakers = [
-            { id: 'me', name: '我(老師)', icon: '👦', isMe: true },
-            { id: 'masao', name: '正男', icon: '🍙', isMe: false, fullname: '正男 (Masao)' },
-            { id: 'kazama', name: '風間', icon: '👦🏻', isMe: false, fullname: '風間 (Kazama)' }
+            { id: 'me', name: '我(老師)', icon: '👦', image: null, isMe: true },
+            { id: 'masao', name: '正男', icon: '🍙', image: null, isMe: false, fullname: '正男 (Masao)' },
+            { id: 'kazama', name: '風間', icon: '👦🏻', image: null, isMe: false, fullname: '風間 (Kazama)' }
         ];
         
         let currentSpeakerId = 'me';
 
-        // 移除了英文，只保留中文對話
         let messages = [
             { speakerId: 'masao', text: "小新，今天要出去玩嗎？", time: "08:00" },
             { speakerId: 'me', text: "好哇，我們公園見。", time: "08:02" }
         ];
 
-        // ================= DOM 元素 =================
-        const chatBox = document.getElementById('chatBox');
-        const chatInput = document.getElementById('chatInput');
-        const titleEl = document.getElementById('chatTitle');
-        const memberCountEl = document.getElementById('memberCount');
+        let editingAvatarSpeakerId = null; // 紀錄正在更換頭像的角色 ID
 
-        // ================= 初始化 =================
+        // ================= 核心邏輯函式 =================
+
+        function getAvatarHtml(speaker, textClass = '') {
+            if (speaker.image) {
+                return `<img src="${speaker.image}" class="w-full h-full object-cover">`;
+            } else {
+                return `<span class="${textClass}">${speaker.icon}</span>`;
+            }
+        }
+
         function init() {
             updateLockedUI();
             renderMessages();
@@ -215,149 +238,131 @@
 
         function renameChat() {
             const newName = prompt("請輸入新的群組名稱：", chatTitle);
-            if (newName && newName.trim() !== "") {
+            const titleEl = document.getElementById('chatTitle');
+            if (newName && newName.trim() !== "" && titleEl) {
                 chatTitle = newName.trim();
                 titleEl.textContent = chatTitle;
             }
         }
 
-        // ================= 角色鎖定系統 =================
         function handleMemberBtnClick() {
             if (isLocked) {
-                if (confirm("目前設備已鎖定身分，是否要解除鎖定重新選擇？\n(老師端操作)")) {
-                    isLocked = false;
-                    updateLockedUI();
-                }
+                alert("🔒 身分已鎖定！\n若需更換發言角色，請重新整理網頁（關閉並重新開啟）。");
             } else {
-                openMemberModal();
+                openMemberSidebar();
             }
         }
 
-        function openMemberModal() {
-            const list = document.getElementById('modalSpeakerList');
+        function openMemberSidebar() {
+            renderSidebarSpeakers();
+            const sidebar = document.getElementById('memberSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if(sidebar) sidebar.classList.remove('translate-x-full');
+            if(overlay) overlay.classList.remove('hidden');
+        }
+
+        function closeMemberSidebar() {
+            const sidebar = document.getElementById('memberSidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            if(sidebar) sidebar.classList.add('translate-x-full');
+            if(overlay) overlay.classList.add('hidden');
+        }
+
+        function renderSidebarSpeakers() {
+            const list = document.getElementById('sidebarSpeakerList');
+            if (!list) return;
+
             list.innerHTML = '';
-            
             speakers.forEach(s => {
                 const isSelected = s.id === currentSpeakerId;
                 list.innerHTML += `
-                    <div class="flex flex-col items-center cursor-pointer touch-active group" onclick="lockSpeaker('${s.id}')">
-                        <div class="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-3xl md:text-4xl bg-white shadow-sm border-[3px] transition-all group-active:scale-95 ${isSelected ? 'border-[#06C755] bg-green-50' : 'border-gray-200'}">
-                            ${s.icon}
+                    <div class="flex items-center gap-3 p-3 rounded-xl border ${isSelected ? 'border-[#06C755] bg-green-50 shadow-md' : 'border-gray-200 bg-white shadow-sm'} transition-colors">
+                        <div class="relative w-14 h-14 flex-shrink-0 cursor-pointer group rounded-full overflow-hidden border border-gray-300 flex items-center justify-center bg-gray-100 touch-active" onclick="triggerAvatarUpload('${s.id}')" title="點擊更換頭像">
+                            ${getAvatarHtml(s, 'text-3xl')}
+                            <div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center text-white text-xs font-bold tracking-widest">更換</div>
                         </div>
-                        <span class="mt-2 text-xs md:text-sm font-medium ${isSelected ? 'text-[#06C755]' : 'text-gray-600'} truncate w-full text-center">${s.name}</span>
+                        <div class="flex-1">
+                            <input type="text" class="w-full bg-transparent border-b-2 border-transparent hover:border-gray-300 focus:border-[#06C755] outline-none px-1 py-1 text-gray-800 font-bold text-lg md:text-xl transition-colors" value="${s.fullname || s.name}" onchange="updateSpeakerName('${s.id}', this.value)" title="點擊編輯名稱" placeholder="輸入名稱">
+                        </div>
+                        <button onclick="lockSpeaker('${s.id}')" class="flex-shrink-0 bg-[#06C755] text-white px-4 py-2 md:px-5 md:py-3 rounded-xl text-sm md:text-base font-bold hover:bg-[#05a546] active:scale-95 transition-all shadow-sm">
+                            選擇
+                        </button>
                     </div>
                 `;
             });
-
-            list.innerHTML += `
-                <div class="flex flex-col items-center cursor-pointer touch-active group" onclick="addNewSpeaker()">
-                    <div class="w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center text-3xl md:text-4xl bg-gray-50 border-[3px] border-dashed border-gray-300 text-gray-400 group-active:scale-95">
-                        +
-                    </div>
-                    <span class="mt-2 text-xs md:text-sm font-medium text-gray-500">新增</span>
-                </div>
-            `;
-
-            document.getElementById('memberModal').classList.remove('hidden');
-        }
-
-        function closeMemberModal() {
-            document.getElementById('memberModal').classList.add('hidden');
         }
 
         function lockSpeaker(id) {
             const speaker = speakers.find(s => s.id === id);
-            if (confirm(`確定要以「${speaker.fullname || speaker.name}」的身份發言並鎖定嗎？`)) {
+            if (speaker && confirm(`確定要以「${speaker.fullname || speaker.name}」的身份發言嗎？\n⚠️ 鎖定後將無法再更換身分！`)) {
                 currentSpeakerId = id;
                 isLocked = true;
-                closeMemberModal();
+                closeMemberSidebar();
                 updateLockedUI();
-                chatInput.focus();
+                const chatInput = document.getElementById('chatInput');
+                if (chatInput) chatInput.focus();
             }
         }
 
         function addNewSpeaker() {
-            const name = prompt("請輸入新角色的名稱：\n(例如：妮妮)");
-            if (!name) return;
-            const icon = prompt("請輸入代表該角色的 Emoji：\n(例如：🐰)", "🐰");
-            if (!icon) return;
-
             const newId = 'user_' + Date.now();
             speakers.push({
                 id: newId,
-                name: name.substring(0, 4),
-                fullname: name,
-                icon: icon,
+                name: '新成員',
+                fullname: '新成員',
+                icon: '👤',
+                image: null,
                 isMe: false 
             });
             
-            memberCountEl.textContent = speakers.length;
-            openMemberModal();
+            const memberCountEl = document.getElementById('memberCount');
+            if (memberCountEl) memberCountEl.textContent = speakers.length;
+            
+            renderSidebarSpeakers();
+            setTimeout(() => {
+                const list = document.getElementById('sidebarSpeakerList');
+                if (list) list.scrollTop = list.scrollHeight;
+            }, 50);
+        }
+
+        function updateSpeakerName(id, newName) {
+            const speaker = speakers.find(s => s.id === id);
+            if (speaker && newName.trim() !== '') {
+                speaker.fullname = newName.trim();
+                speaker.name = newName.trim().substring(0, 5); 
+                renderMessages();
+            }
+        }
+
+        function triggerAvatarUpload(id) {
+            editingAvatarSpeakerId = id;
+            const avatarUploader = document.getElementById('avatarUploader');
+            if (avatarUploader) avatarUploader.click();
         }
 
         function updateLockedUI() {
             const speaker = speakers.find(s => s.id === currentSpeakerId) || speakers[0];
             const memberBtn = document.getElementById('memberBtn');
             const indicator = document.getElementById('currentAvatarIndicator');
+            const memberCountEl = document.getElementById('memberCount');
 
-            indicator.textContent = speaker.icon;
-            memberCountEl.textContent = speakers.length;
+            if (indicator) indicator.innerHTML = getAvatarHtml(speaker, 'text-sm md:text-lg');
+            if (memberCountEl) memberCountEl.textContent = speakers.length;
 
-            if (isLocked) {
-                memberBtn.innerHTML = `<div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white flex items-center justify-center text-xl md:text-2xl shadow-sm border-[3px] border-[#06C755] bg-green-50 animate-pop-in">${speaker.icon}</div>`;
-            } else {
-                memberBtn.innerHTML = `<svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`;
+            if (memberBtn) {
+                if (isLocked) {
+                    memberBtn.innerHTML = `<div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-white flex items-center justify-center text-xl md:text-2xl shadow-sm border-[3px] border-[#06C755] bg-green-50 animate-pop-in overflow-hidden">${getAvatarHtml(speaker, '')}</div>`;
+                } else {
+                    memberBtn.innerHTML = `<svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>`;
+                }
             }
         }
 
-        // ================= 匯出與匯入系統 =================
-        document.getElementById('downloadBtn').addEventListener('click', function() {
-            const data = { title: chatTitle, speakers: speakers, messages: messages };
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${chatTitle}_對話紀錄.json`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-        });
-
-        document.getElementById('uploadFile').addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            
-            const reader = new FileReader();
-            reader.onload = function(evt) {
-                try {
-                    const data = JSON.parse(evt.target.result);
-                    if (data.title) chatTitle = data.title;
-                    if (data.speakers) speakers = data.speakers;
-                    if (data.messages) messages = data.messages;
-                    
-                    titleEl.textContent = chatTitle;
-                    memberCountEl.textContent = speakers.length;
-                    
-                    isLocked = false; 
-                    if(speakers.length > 0) currentSpeakerId = speakers[0].id;
-                    
-                    updateLockedUI();
-                    renderMessages();
-                    scrollToBottom();
-                    alert("載入成功！學生名單與紀錄已更新。");
-                } catch(err) {
-                    alert("讀取失敗：檔案格式不正確！");
-                }
-                e.target.value = '';
-            };
-            reader.readAsText(file);
-        });
-
-        // ================= 渲染聊天內容 =================
         function renderMessages() {
+            const chatBox = document.getElementById('chatBox');
+            if (!chatBox) return;
+
             chatBox.innerHTML = '';
-            
             messages.forEach(msg => {
                 const speaker = speakers.find(s => s.id === msg.speakerId) || speakers[0];
                 const msgEl = document.createElement('div');
@@ -377,8 +382,8 @@
                     msgEl.classList.add('justify-start');
                     msgEl.innerHTML = `
                         <div class="flex items-start gap-3 max-w-[85%]">
-                            <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center text-2xl flex-shrink-0 shadow-sm mt-1 border border-gray-100">
-                                ${speaker.icon}
+                            <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center text-2xl flex-shrink-0 shadow-sm mt-1 border border-gray-200 overflow-hidden">
+                                ${getAvatarHtml(speaker, '')}
                             </div>
                             <div class="flex flex-col gap-1">
                                 <span class="text-xs md:text-sm text-white ml-1 drop-shadow-md">${speaker.fullname || speaker.name}</span>
@@ -396,8 +401,24 @@
             });
         }
 
-        // ================= 訊息發送邏輯 =================
+        function toggleSendIcon() {
+            const chatInput = document.getElementById('chatInput');
+            const micIcon = document.getElementById('micIcon');
+            const planeIcon = document.getElementById('planeIcon');
+            if (!chatInput || !micIcon || !planeIcon) return;
+
+            if (chatInput.value.trim().length > 0) {
+                micIcon.classList.add('hidden');
+                planeIcon.classList.remove('hidden');
+            } else {
+                micIcon.classList.remove('hidden');
+                planeIcon.classList.add('hidden');
+            }
+        }
+
         function sendMessage() {
+            const chatInput = document.getElementById('chatInput');
+            if (!chatInput) return;
             const text = chatInput.value.trim();
             if (!text) return;
 
@@ -426,180 +447,267 @@
 
         function scrollToBottom() {
             setTimeout(() => {
-                chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
+                const chatBox = document.getElementById('chatBox');
+                if (chatBox) chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
             }, 50);
         }
 
-        // 監聽輸入框變化
-        const micIcon = document.getElementById('micIcon');
-        const planeIcon = document.getElementById('planeIcon');
-        
-        function toggleSendIcon() {
-            if (chatInput.value.trim().length > 0) {
-                micIcon.classList.add('hidden');
-                planeIcon.classList.remove('hidden');
-            } else {
-                micIcon.classList.remove('hidden');
-                planeIcon.classList.add('hidden');
+        // ================= 事件監聽與 DOM 綁定區塊 (加入防呆保護) =================
+        // 等待所有 HTML 元素讀取完成後再執行，避免 null 錯誤
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // --- 檔案下載邏輯 ---
+            const downloadBtn = document.getElementById('downloadBtn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', function() {
+                    const data = { title: chatTitle, speakers: speakers, messages: messages };
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${chatTitle}_對話紀錄.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
             }
-        }
 
-        chatInput.addEventListener('input', toggleSendIcon);
-        chatInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
-        
-        // ================= 虛擬鍵盤邏輯 (中文注音版) =================
-        const vk = document.getElementById('virtualKeyboard');
-        const vkGrid = document.getElementById('vkGrid');
-        // 標準注音鍵盤配置 (共 44 鍵，分為 4 排 11 欄)
-        const keys = [
-            'ㄅ','ㄉ','ˇ','ˋ','ㄓ','ˊ','˙','ㄚ','ㄞ','ㄢ','ㄦ',
-            'ㄆ','ㄊ','ㄍ','ㄐ','ㄔ','ㄗ','ㄧ','ㄛ','ㄟ','ㄣ','?',
-            'ㄇ','ㄋ','ㄎ','ㄑ','ㄕ','ㄘ','ㄨ','ㄜ','ㄠ','ㄤ','!',
-            'ㄈ','ㄌ','ㄏ','ㄒ','ㄖ','ㄙ','ㄩ','ㄝ','ㄡ','ㄥ','@'
-        ];
-        
-        // 產生按鍵
-        keys.forEach(k => {
-            const btn = document.createElement('button');
-            btn.className = 'bg-white shadow rounded p-2 md:p-3 text-base md:text-xl font-bold active:bg-gray-200 touch-active';
-            btn.textContent = k;
-            btn.onclick = (e) => {
-                e.preventDefault();
-                chatInput.value += k;
-                toggleSendIcon();
-            };
-            vkGrid.appendChild(btn);
-        });
-
-        document.getElementById('vkBksp').onclick = (e) => {
-            e.preventDefault();
-            chatInput.value = chatInput.value.slice(0, -1);
-            toggleSendIcon();
-        };
-
-        document.getElementById('vkClose').onclick = (e) => {
-            e.preventDefault();
-            vk.classList.remove('flex');
-            vk.classList.add('hidden');
-        };
-
-        document.getElementById('vkSpace').onclick = (e) => {
-            e.preventDefault();
-            chatInput.value += ' ';
-            toggleSendIcon();
-        };
-
-        // 點擊輸入框顯示鍵盤
-        chatInput.addEventListener('focus', () => {
-            vk.classList.remove('hidden');
-            vk.classList.add('flex');
-            scrollToBottom();
-        });
-
-        // ================= 擴充版表情貼圖邏輯 =================
-        const emojis = [
-            // 表情
-            '😀','😂','🥰','😎','🥺','🤔','👍','🙏','❤️','✨','🎉','🔥','💯','❓','❗️',
-            '😃','😄','😁','😆','😅','🤣','🥲','☺️','😊','😇','🙂','🙃','😉','😌','😍',
-            '😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','🥸','🤩','🥳',
-            '😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','😢','😭','😤',
-            '😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🫣','🤭',
-            '🫢','🫡','🤫','🫠','🤥','😶','🫥','😐','🫤','😑','😬','🙄','😯','😦','😧',
-            '😮','😲','🥱','😴','🤤','😪','😮‍💨','😵','😵‍💫','🤐','🥴','🤢','🤮','🤧','😷',
-            // 手勢
-            '👋','🤚','🖐','✋','🖖','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉',
-            '👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','🫶','👐','🤲','🤝',
-            // 人物角色
-            '👦','👧','👨','👩','👴','👵','👶','👱‍♂️','👱‍♀️','👨‍🦰','👩‍🦰','👮‍♂️','👮‍♀️','👷‍♂️','👷‍♀️',
-            '👩‍⚕️','👨‍⚕️','👩‍🏫','👨‍🏫','🧑‍🎓','👩‍🍳','👨‍🍳','🕵️‍♂️','🥷','🦸‍♂️','🦸‍♀️','🧙‍♂️','🧚‍♀️','🧛‍♂️','🧜‍♀️',
-            // 動物
-            '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐸','🐵',
-            '🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋',
-            // 食物
-            '🍏','🍎','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥',
-            '🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌽','🥕','🥔','🍠','🥐','🥯','🍞','🥖',
-            '🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🥪','🌮',
-            '🥗','🥘','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🍤','🍙','🍚','🍘','🍢','🍡',
-            '🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪',
-            // 交通與天氣
-            '🚗','🚕','🚙','🚌','🚎','🏎','🚓','🚑','🚒','🚐','🚚','🚛','🚜',
-            '☀️','🌤','⛅️','🌥','☁️','🌦','🌧','⛈','🌩','🌨','❄️','☃️','⛄️','🌬','💨','☔️'
-        ];
-        
-        const emojiGrid = document.getElementById('emojiGrid');
-        const emojiPicker = document.getElementById('emojiPicker');
-        
-        emojis.forEach(e => {
-            const span = document.createElement('span');
-            span.className = 'cursor-pointer hover:scale-125 transition-transform inline-block p-1';
-            span.textContent = e;
-            span.onclick = () => {
-                chatInput.value += e;
-                toggleSendIcon();
-            };
-            emojiGrid.appendChild(span);
-        });
-
-        document.getElementById('emojiBtn').addEventListener('click', (e) => {
-            e.stopPropagation();
-            emojiPicker.classList.toggle('hidden');
-        });
-
-        // 點擊畫面其他地方時隱藏表情選單
-        document.addEventListener('click', (e) => {
-            if (!emojiPicker.contains(e.target) && e.target.id !== 'emojiBtn') {
-                emojiPicker.classList.add('hidden');
+            // --- 檔案上傳與頭像上傳邏輯 ---
+            const uploadFile = document.getElementById('uploadFile');
+            if (uploadFile) {
+                uploadFile.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+                    
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        try {
+                            const data = JSON.parse(evt.target.result);
+                            if (data.title) chatTitle = data.title;
+                            if (data.speakers) speakers = data.speakers;
+                            if (data.messages) messages = data.messages;
+                            
+                            const titleEl = document.getElementById('chatTitle');
+                            const memberCountEl = document.getElementById('memberCount');
+                            if (titleEl) titleEl.textContent = chatTitle;
+                            if (memberCountEl) memberCountEl.textContent = speakers.length;
+                            
+                            isLocked = false; 
+                            if(speakers.length > 0) currentSpeakerId = speakers[0].id;
+                            
+                            updateLockedUI();
+                            renderMessages();
+                            scrollToBottom();
+                            alert("載入成功！學生名單與紀錄已更新。");
+                        } catch(err) {
+                            alert("讀取失敗：檔案格式不正確！");
+                        }
+                        e.target.value = '';
+                    };
+                    reader.readAsText(file);
+                });
             }
-        });
 
-        // ================= 語音輸入邏輯 (Web Speech API) =================
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        let recognition;
-        
-        if (SpeechRecognition) {
-            recognition = new SpeechRecognition();
-            recognition.lang = 'zh-TW';
-            recognition.interimResults = false; 
+            const avatarUploader = document.getElementById('avatarUploader');
+            if (avatarUploader) {
+                avatarUploader.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = function(evt) {
+                        const base64Image = evt.target.result;
+                        const speaker = speakers.find(s => s.id === editingAvatarSpeakerId);
+                        if (speaker) {
+                            speaker.image = base64Image;
+                            speaker.icon = ''; // 清除原本的 emoji
+                            renderSidebarSpeakers();
+                            renderMessages();
+                            updateLockedUI();
+                        }
+                        avatarUploader.value = ''; 
+                    };
+                    reader.readAsDataURL(file); 
+                });
+            }
+
+            // --- 輸入框與虛擬鍵盤邏輯 ---
+            const chatInput = document.getElementById('chatInput');
+            if (chatInput) {
+                chatInput.addEventListener('input', toggleSendIcon);
+                chatInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+                chatInput.addEventListener('focus', () => {
+                    const vk = document.getElementById('virtualKeyboard');
+                    if (vk) {
+                        vk.classList.remove('hidden');
+                        vk.classList.add('flex');
+                        scrollToBottom();
+                    }
+                });
+            }
+
+            const vkGrid = document.getElementById('vkGrid');
+            if (vkGrid) {
+                const keys = [
+                    'ㄅ','ㄉ','ˇ','ˋ','ㄓ','ˊ','˙','ㄚ','ㄞ','ㄢ','ㄦ',
+                    'ㄆ','ㄊ','ㄍ','ㄐ','ㄔ','ㄗ','ㄧ','ㄛ','ㄟ','ㄣ','?',
+                    'ㄇ','ㄋ','ㄎ','ㄑ','ㄕ','ㄘ','ㄨ','ㄜ','ㄠ','ㄤ','!',
+                    'ㄈ','ㄌ','ㄏ','ㄒ','ㄖ','ㄙ','ㄩ','ㄝ','ㄡ','ㄥ','@'
+                ];
+                keys.forEach(k => {
+                    const btn = document.createElement('button');
+                    btn.className = 'bg-white shadow rounded p-2 md:p-3 text-base md:text-xl font-bold active:bg-gray-200 touch-active';
+                    btn.textContent = k;
+                    btn.onclick = (e) => {
+                        e.preventDefault();
+                        if (chatInput) chatInput.value += k;
+                        toggleSendIcon();
+                    };
+                    vkGrid.appendChild(btn);
+                });
+            }
+
+            const vkBksp = document.getElementById('vkBksp');
+            if (vkBksp) {
+                vkBksp.onclick = (e) => {
+                    e.preventDefault();
+                    if (chatInput) chatInput.value = chatInput.value.slice(0, -1);
+                    toggleSendIcon();
+                };
+            }
+
+            const vkClose = document.getElementById('vkClose');
+            if (vkClose) {
+                vkClose.onclick = (e) => {
+                    e.preventDefault();
+                    const vk = document.getElementById('virtualKeyboard');
+                    if (vk) {
+                        vk.classList.remove('flex');
+                        vk.classList.add('hidden');
+                    }
+                };
+            }
+
+            const vkSpace = document.getElementById('vkSpace');
+            if (vkSpace) {
+                vkSpace.onclick = (e) => {
+                    e.preventDefault();
+                    if (chatInput) chatInput.value += ' ';
+                    toggleSendIcon();
+                };
+            }
+
+            // --- 擴充版表情貼圖邏輯 ---
+            const emojiGrid = document.getElementById('emojiGrid');
+            const emojiPicker = document.getElementById('emojiPicker');
+            const emojiBtn = document.getElementById('emojiBtn');
             
-            recognition.onstart = () => {
-                micIcon.classList.add('text-red-500', 'animate-pulse');
-                chatInput.placeholder = "請開始說話...";
-            };
-            
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                chatInput.value += transcript;
-                toggleSendIcon();
-            };
-            
-            recognition.onend = () => {
-                micIcon.classList.remove('text-red-500', 'animate-pulse');
-                chatInput.placeholder = "輸入訊息...";
-            };
-            
-            recognition.onerror = (e) => {
-                console.error("語音辨識錯誤:", e);
-                micIcon.classList.remove('text-red-500', 'animate-pulse');
-                chatInput.placeholder = "輸入訊息...";
-                if(e.error === 'not-allowed') {
-                    alert("請允許使用麥克風權限才能進行語音輸入。");
+            if (emojiGrid && emojiPicker) {
+                const emojisList = [
+                    '😀','😂','🥰','😎','🥺','🤔','👍','🙏','❤️','✨','🎉','🔥','💯','❓','❗️',
+                    '😃','😄','😁','😆','😅','🤣','🥲','☺️','😊','😇','🙂','🙃','😉','😌','😍',
+                    '😘','😗','😙','😚','😋','😛','😝','😜','🤪','🤨','🧐','🤓','🥸','🤩','🥳',
+                    '😏','😒','😞','😔','😟','😕','🙁','☹️','😣','😖','😫','😩','😢','😭','😤',
+                    '😠','😡','🤬','🤯','😳','🥵','🥶','😱','😨','😰','😥','😓','🤗','🫣','🤭',
+                    '🫢','🫡','🤫','🫠','🤥','😶','🫥','😐','🫤','😑','😬','🙄','😯','😦','😧',
+                    '😮','😲','🥱','😴','🤤','😪','😮‍💨','😵','😵‍💫','🤐','🥴','🤢','🤮','🤧','😷',
+                    '👋','🤚','🖐','✋','🖖','👌','🤌','🤏','✌️','🤞','🫰','🤟','🤘','🤙','👈','👉',
+                    '👆','🖕','👇','☝️','👍','👎','✊','👊','🤛','🤜','👏','🙌','🫶','👐','🤲','🤝',
+                    '👦','👧','👨','👩','👴','👵','👶','👱‍♂️','👱‍♀️','👨‍🦰','👩‍🦰','👮‍♂️','👮‍♀️','👷‍♂️','👷‍♀️',
+                    '👩‍⚕️','👨‍⚕️','👩‍🏫','👨‍🏫','🧑‍🎓','👩‍🍳','👨‍🍳','🕵️‍♂️','🥷','🦸‍♂️','🦸‍♀️','🧙‍♂️','🧚‍♀️','🧛‍♂️','🧜‍♀️',
+                    '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐸','🐵',
+                    '🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋',
+                    '🍏','🍎','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥',
+                    '🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌽','🥕','🥔','🍠','🥐','🥯','🍞','🥖',
+                    '🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🥪','🌮',
+                    '🥗','🥘','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🍤','🍙','🍚','🍘','🍢','🍡',
+                    '🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪',
+                    '🚗','🚕','🚙','🚌','🚎','🏎','🚓','🚑','🚒','🚐','🚚','🚛','🚜',
+                    '☀️','🌤','⛅️','🌥','☁️','🌦','🌧','⛈','🌩','🌨','❄️','☃️','⛄️','🌬','💨','☔️'
+                ];
+                
+                emojisList.forEach(e => {
+                    const span = document.createElement('span');
+                    span.className = 'cursor-pointer hover:scale-125 transition-transform inline-block p-1';
+                    span.textContent = e;
+                    span.onclick = () => {
+                        if (chatInput) chatInput.value += e;
+                        toggleSendIcon();
+                    };
+                    emojiGrid.appendChild(span);
+                });
+
+                if (emojiBtn) {
+                    emojiBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        emojiPicker.classList.toggle('hidden');
+                    });
                 }
-            };
-        }
 
-        document.getElementById('sendBtn').addEventListener('click', () => {
-            if (chatInput.value.trim().length > 0) {
-                sendMessage(); 
-            } else {
-                if (recognition) {
-                    recognition.start();
-                } else {
-                    alert("您的瀏覽器不支援語音輸入功能（建議使用 Chrome 或 Safari）。");
-                }
+                document.addEventListener('click', (e) => {
+                    if (!emojiPicker.contains(e.target) && emojiBtn && !emojiBtn.contains(e.target)) {
+                        emojiPicker.classList.add('hidden');
+                    }
+                });
             }
-        });
 
-        init();
+            // --- 語音輸入與發送邏輯 (Web Speech API) ---
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            let recognition;
+            
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.lang = 'zh-TW';
+                recognition.interimResults = false; 
+                
+                recognition.onstart = () => {
+                    const micIcon = document.getElementById('micIcon');
+                    if (micIcon) micIcon.classList.add('text-red-500', 'animate-pulse');
+                    if (chatInput) chatInput.placeholder = "請開始說話...";
+                };
+                
+                recognition.onresult = (event) => {
+                    const transcript = event.results[0][0].transcript;
+                    if (chatInput) chatInput.value += transcript;
+                    toggleSendIcon();
+                };
+                
+                recognition.onend = () => {
+                    const micIcon = document.getElementById('micIcon');
+                    if (micIcon) micIcon.classList.remove('text-red-500', 'animate-pulse');
+                    if (chatInput) chatInput.placeholder = "輸入訊息...";
+                };
+                
+                recognition.onerror = (e) => {
+                    console.error("語音辨識錯誤:", e);
+                    const micIcon = document.getElementById('micIcon');
+                    if (micIcon) micIcon.classList.remove('text-red-500', 'animate-pulse');
+                    if (chatInput) chatInput.placeholder = "輸入訊息...";
+                    if(e.error === 'not-allowed') {
+                        alert("請允許使用麥克風權限才能進行語音輸入。");
+                    }
+                };
+            }
+
+            const sendBtn = document.getElementById('sendBtn');
+            if (sendBtn) {
+                sendBtn.addEventListener('click', () => {
+                    if (chatInput && chatInput.value.trim().length > 0) {
+                        sendMessage(); 
+                    } else {
+                        if (recognition) {
+                            recognition.start();
+                        } else {
+                            alert("您的瀏覽器不支援語音輸入功能（建議使用 Chrome 或 Safari）。");
+                        }
+                    }
+                });
+            }
+
+            // 啟動系統
+            init();
+        });
     </script>
 </body>
 </html>
