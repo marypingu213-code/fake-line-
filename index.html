@@ -99,7 +99,7 @@
         </main>
 
         <!-- ================= 底部輸入區 ================= -->
-        <div class="bg-[#F3F4F6] px-3 py-3 md:px-5 md:py-4 flex items-center gap-2 md:gap-3 pb-6 sm:pb-4 border-t border-gray-300">
+        <div class="bg-[#F3F4F6] px-3 py-3 md:px-5 md:py-4 flex items-center gap-2 md:gap-3 pb-6 sm:pb-4 border-t border-gray-300 relative z-30">
             <!-- 圓圈加號 -->
             <svg class="w-7 h-7 md:w-9 md:h-9 text-gray-500 touch-active cursor-pointer flex-shrink-0 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <!-- 相機 -->
@@ -108,7 +108,7 @@
             <svg class="w-7 h-7 md:w-9 md:h-9 text-gray-500 touch-active cursor-pointer flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             
             <!-- 文字輸入框 (內含鎖定頭像提示) -->
-            <div class="flex-1 bg-white rounded-full flex items-center px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 shadow-sm transition-all focus-within:border-[#06C755] focus-within:ring-2 focus-within:ring-[#06C755]/20">
+            <div class="flex-1 bg-white rounded-full flex items-center px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 shadow-sm transition-all focus-within:border-[#06C755] focus-within:ring-2 focus-within:ring-[#06C755]/20 relative">
                 
                 <!-- 顯示目前是誰在打字的小頭像 -->
                 <div id="currentAvatarIndicator" class="w-7 h-7 md:w-9 md:h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm md:text-lg flex-shrink-0 border border-gray-200 mr-2" title="目前發言身分">
@@ -117,14 +117,33 @@
 
                 <input type="text" id="chatInput" class="w-full bg-transparent outline-none text-base md:text-xl" placeholder="輸入訊息...">
                 
-                <svg class="w-6 h-6 md:w-8 md:h-8 text-gray-400 cursor-pointer ml-1 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                <!-- 標記 2: Emoji 按鈕 -->
+                <svg id="emojiBtn" class="w-6 h-6 md:w-8 md:h-8 text-gray-400 cursor-pointer ml-1 flex-shrink-0 hover:text-yellow-500 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                
+                <!-- 表情貼圖彈出視窗 -->
+                <div id="emojiPicker" class="hidden absolute bottom-[120%] right-0 bg-white rounded-2xl shadow-xl border border-gray-200 p-3 w-64 md:w-80 z-50 animate-pop-in">
+                    <div id="emojiGrid" class="grid grid-cols-6 gap-3 text-2xl md:text-3xl text-center"></div>
+                </div>
             </div>
             
-            <!-- 發送按鈕 -->
-            <button id="sendBtn" class="text-gray-500 hover:text-[#06C755] touch-active flex-shrink-0 p-1 transition-colors">
-                <svg id="micIcon" class="w-7 h-7 md:w-9 md:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+            <!-- 標記 3: 發送 / 麥克風按鈕 -->
+            <button id="sendBtn" class="text-gray-500 hover:text-[#06C755] touch-active flex-shrink-0 p-1 transition-colors relative">
+                <svg id="micIcon" class="w-7 h-7 md:w-9 md:h-9 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                 <svg id="planeIcon" class="w-7 h-7 md:w-9 md:h-9 hidden text-[#06C755]" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
             </button>
+        </div>
+
+        <!-- 標記 1: 虛擬鍵盤容器 (預設隱藏) -->
+        <div id="virtualKeyboard" class="hidden bg-[#D1D5DB] p-2 md:p-4 flex-col gap-1 md:gap-2 shadow-[inset_0_4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
+            <div class="flex justify-between items-center mb-1 px-1">
+                <span class="text-xs text-gray-600 font-bold">自訂虛擬鍵盤 (輔助無觸控螢幕使用)</span>
+                <button id="vkClose" class="text-gray-700 bg-gray-200 px-3 py-1 rounded-lg shadow border border-gray-300 text-sm active:bg-gray-400">▼ 關閉</button>
+            </div>
+            <div id="vkGrid" class="grid grid-cols-10 gap-1 md:gap-2"></div>
+            <div class="grid grid-cols-4 gap-1 md:gap-2 mt-1 md:mt-2">
+                <button id="vkSpace" class="col-span-3 bg-white shadow rounded-lg p-2 md:p-3 text-lg font-bold active:bg-gray-200 touch-active">空白鍵 Space</button>
+                <button id="vkBksp" class="col-span-1 bg-[#9CA3AF] text-white shadow rounded-lg p-2 md:p-3 text-lg font-bold active:bg-gray-500 touch-active">⌫ 退格</button>
+            </div>
         </div>
 
         <!-- ================= 角色選擇與鎖定 Modal ================= -->
@@ -384,8 +403,14 @@
             const text = chatInput.value.trim();
             if (!text) return;
 
+            // 確保對話時間依照實際的中原標準時間 (台北時間)
             const now = new Date();
-            const timeStr = now.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
+            const timeStr = now.toLocaleTimeString('zh-TW', { 
+                timeZone: 'Asia/Taipei',
+                hour12: false, 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
             const formattedText = text.replace(/\n/g, '<br>');
 
             messages.push({
@@ -424,8 +449,126 @@
 
         chatInput.addEventListener('input', toggleSendIcon);
         chatInput.addEventListener('keypress', e => { if (e.key === 'Enter') sendMessage(); });
+        
+        // ================= 標記 1: 虛擬鍵盤邏輯 =================
+        const vk = document.getElementById('virtualKeyboard');
+        const vkGrid = document.getElementById('vkGrid');
+        const keys = ['1','2','3','4','5','6','7','8','9','0','Q','W','E','R','T','Y','U','I','O','P','A','S','D','F','G','H','J','K','L','Z','X','C','V','B','N','M','?','!','@'];
+        
+        // 產生按鍵
+        keys.forEach(k => {
+            const btn = document.createElement('button');
+            btn.className = 'bg-white shadow rounded p-2 md:p-3 text-base md:text-xl font-bold active:bg-gray-200 touch-active';
+            btn.textContent = k;
+            btn.onclick = (e) => {
+                e.preventDefault();
+                chatInput.value += k;
+                toggleSendIcon();
+            };
+            vkGrid.appendChild(btn);
+        });
+
+        document.getElementById('vkBksp').onclick = (e) => {
+            e.preventDefault();
+            chatInput.value = chatInput.value.slice(0, -1);
+            toggleSendIcon();
+        };
+
+        document.getElementById('vkClose').onclick = (e) => {
+            e.preventDefault();
+            vk.classList.remove('flex');
+            vk.classList.add('hidden');
+        };
+
+        document.getElementById('vkSpace').onclick = (e) => {
+            e.preventDefault();
+            chatInput.value += ' ';
+            toggleSendIcon();
+        };
+
+        // 點擊輸入框顯示鍵盤
+        chatInput.addEventListener('focus', () => {
+            vk.classList.remove('hidden');
+            vk.classList.add('flex');
+            scrollToBottom();
+        });
+
+        // ================= 標記 2: 表情貼圖邏輯 =================
+        const emojis = ['😀','😂','🥰','😎','🥺','🤔','👍','🙏','❤️','✨','🎉','🔥','🍙','👦','👧','🐶','🐱','🎮'];
+        const emojiGrid = document.getElementById('emojiGrid');
+        const emojiPicker = document.getElementById('emojiPicker');
+        
+        emojis.forEach(e => {
+            const span = document.createElement('span');
+            span.className = 'cursor-pointer hover:scale-125 transition-transform inline-block p-1';
+            span.textContent = e;
+            span.onclick = () => {
+                chatInput.value += e;
+                toggleSendIcon();
+                emojiPicker.classList.add('hidden'); // 點擊後自動隱藏
+            };
+            emojiGrid.appendChild(span);
+        });
+
+        document.getElementById('emojiBtn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            emojiPicker.classList.toggle('hidden');
+        });
+
+        // 點擊畫面其他地方時隱藏表情選單
+        document.addEventListener('click', (e) => {
+            if (!emojiPicker.contains(e.target) && e.target.id !== 'emojiBtn') {
+                emojiPicker.classList.add('hidden');
+            }
+        });
+
+        // ================= 標記 3: 語音輸入邏輯 (Web Speech API) =================
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        let recognition;
+        
+        if (SpeechRecognition) {
+            recognition = new SpeechRecognition();
+            recognition.lang = 'zh-TW';
+            recognition.interimResults = false; // 只取最終結果
+            
+            recognition.onstart = () => {
+                micIcon.classList.add('text-red-500', 'animate-pulse');
+                chatInput.placeholder = "請開始說話...";
+            };
+            
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                chatInput.value += transcript;
+                toggleSendIcon();
+            };
+            
+            recognition.onend = () => {
+                micIcon.classList.remove('text-red-500', 'animate-pulse');
+                chatInput.placeholder = "輸入訊息...";
+            };
+            
+            recognition.onerror = (e) => {
+                console.error("語音辨識錯誤:", e);
+                micIcon.classList.remove('text-red-500', 'animate-pulse');
+                chatInput.placeholder = "輸入訊息...";
+                if(e.error === 'not-allowed') {
+                    alert("請允許使用麥克風權限才能進行語音輸入。");
+                }
+            };
+        }
+
+        // 修改原本的 SendBtn 事件，加入麥克風判斷
         document.getElementById('sendBtn').addEventListener('click', () => {
-            if (chatInput.value.trim().length > 0) sendMessage();
+            if (chatInput.value.trim().length > 0) {
+                sendMessage(); // 如果有字，當作發送鍵
+            } else {
+                // 如果沒有字，當作麥克風鍵
+                if (recognition) {
+                    recognition.start();
+                } else {
+                    alert("您的瀏覽器不支援語音輸入功能（建議使用 Chrome 或 Safari）。");
+                }
+            }
         });
 
         init();
