@@ -2,270 +2,356 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <!-- 針對平板/手機的關鍵設定：確保寬度符合裝置，並禁止使用者雙擊縮放，讓體驗更像 App -->
+    <!-- 針對平板/手機的關鍵設定：確保寬度符合裝置，並禁止使用者雙擊縮放 -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>大螢幕展示系統 - 會話練習</title>
+    <title>會話練習系統</title>
     <!-- 使用 Tailwind CSS 快速排版 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 隱藏滾動條，讓電視展示更乾淨美觀，但保留滾動功能 */
-        body {
-            -ms-overflow-style: none;  /* IE and Edge */
-            scrollbar-width: none;  /* Firefox */
-            /* 避免長按選取文字 */
-            user-select: none;
+        /* 隱藏滾動條，保持畫面乾淨 */
+        ::-webkit-scrollbar {
+            display: none;
+        }
+        * {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+            user-select: none; /* 防止長按反白文字 */
             -webkit-user-select: none;
         }
-        body::-webkit-scrollbar {
-            display: none; /* Chrome, Safari and Opera */
+        
+        /* 允許輸入框可以選取與操作文字 */
+        input {
+            user-select: auto;
+            -webkit-user-select: auto;
+        }
+
+        /* 聊天氣泡的小尾巴 */
+        .bubble-left::before {
+            content: "";
+            position: absolute;
+            top: 15px;
+            left: -8px;
+            border-style: solid;
+            border-width: 8px 10px 8px 0;
+            border-color: transparent white transparent transparent;
+        }
+        .bubble-right::after {
+            content: "";
+            position: absolute;
+            top: 15px;
+            right: -8px;
+            border-style: solid;
+            border-width: 8px 0 8px 10px;
+            border-color: transparent #9DE556 transparent transparent;
+        }
+
+        /* 點擊回饋動畫 */
+        .touch-active:active {
+            transform: scale(0.95);
+            opacity: 0.8;
         }
         
-        /* 點擊時的簡單動畫效果 */
-        .touch-card {
-            transition: transform 0.2s, background-color 0.2s;
+        /* 訊息進場動畫 */
+        @keyframes popIn {
+            0% { opacity: 0; transform: translateY(10px) scale(0.98); }
+            100% { opacity: 1; transform: translateY(0) scale(1); }
         }
-        .touch-card:active {
-            transform: scale(0.96);
-        }
-        
-        /* 聊天訊息進場動畫 */
-        @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in-up {
-            animation: fadeInUp 0.3s ease-out forwards;
+        .animate-pop-in {
+            animation: popIn 0.2s ease-out forwards;
         }
     </style>
 </head>
-<body class="bg-gray-900 text-white h-screen w-screen overflow-hidden flex flex-col font-sans">
-    
-    <!-- 頂部資訊列 -->
-    <header class="p-6 md:p-8 lg:p-10 flex justify-between items-center bg-gray-800 shadow-md border-b border-gray-700">
-        <h1 class="text-3xl md:text-5xl lg:text-6xl font-bold tracking-wider">資訊儀表板</h1>
-        <div class="flex items-center gap-6">
-            <!-- 大時鐘 -->
-            <div id="clock" class="text-4xl md:text-6xl lg:text-7xl font-mono text-cyan-400 font-bold tracking-widest">00:00:00</div>
+<body class="bg-gray-800 h-screen w-screen flex justify-center items-center font-sans overflow-hidden">
+
+    <!-- 模擬手機/平板外框 (在大螢幕上置中顯示，在小螢幕上全螢幕) -->
+    <div class="w-full h-full max-w-3xl sm:h-[95vh] sm:rounded-[3rem] sm:border-[12px] border-gray-900 bg-[#7BA3B8] flex flex-col relative overflow-hidden shadow-2xl">
+        
+        <!-- ================= 頂部標題列 ================= -->
+        <header class="flex items-center justify-between px-4 py-4 md:py-5 text-white z-10">
+            <div class="flex items-center gap-3 md:gap-4 overflow-hidden">
+                <!-- 返回按鈕 -->
+                <svg class="w-6 h-6 md:w-8 md:h-8 touch-active cursor-pointer flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
+                
+                <!-- 群組名稱 (點擊可改名) -->
+                <div class="flex items-center gap-2 cursor-pointer touch-active truncate" onclick="renameChat()" title="點擊改名">
+                    <h1 id="chatTitle" class="text-xl md:text-3xl font-bold truncate">春日部防衛隊</h1>
+                    <span class="bg-white/20 text-white text-xs md:text-sm px-2 py-0.5 rounded-full">3</span>
+                </div>
+            </div>
             
-            <!-- 全螢幕切換按鈕 -->
-            <button id="fullscreenBtn" class="p-4 md:p-6 bg-gray-700 hover:bg-gray-600 active:bg-gray-500 rounded-2xl transition-colors cursor-pointer touch-card shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 md:h-12 md:w-12 lg:h-14 lg:w-14" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
-                </svg>
+            <div class="flex items-center gap-4 md:gap-6 flex-shrink-0">
+                <!-- 筆記 Icon -->
+                <svg class="w-6 h-6 md:w-8 md:h-8 touch-active cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                <!-- 下載 Icon -->
+                <svg class="w-6 h-6 md:w-8 md:h-8 touch-active cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                <!-- 成員 Icon -->
+                <svg class="w-6 h-6 md:w-8 md:h-8 touch-active cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                <!-- 漢堡選單 Icon (標記 5) -->
+                <svg class="w-7 h-7 md:w-9 md:h-9 touch-active cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
+            </div>
+        </header>
+
+        <!-- ================= 聊天內容區 ================= -->
+        <main id="chatBox" class="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-5 pb-4 scroll-smooth">
+            <!-- 預設訊息內容會由 JavaScript 寫入 -->
+        </main>
+
+        <!-- ================= 發言人選擇區 ================= -->
+        <div class="bg-[#F3F4F6] border-b border-gray-300 px-4 py-3 md:py-4 flex items-center gap-3 overflow-x-auto">
+            <span class="text-sm md:text-base text-gray-500 font-medium whitespace-nowrap">目前發言人：</span>
+            
+            <div id="speakerList" class="flex gap-4 items-center">
+                <!-- 發言人列表會由 JavaScript 動態生成 -->
+            </div>
+        </div>
+
+        <!-- ================= 底部輸入區 ================= -->
+        <div class="bg-[#F3F4F6] px-3 py-3 md:px-5 md:py-4 flex items-center gap-3 pb-6 sm:pb-4">
+            <!-- 標記 4: 圓圈加號 -->
+            <svg class="w-7 h-7 md:w-9 md:h-9 text-gray-500 touch-active cursor-pointer flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <!-- 相機 -->
+            <svg class="w-7 h-7 md:w-9 md:h-9 text-gray-500 touch-active cursor-pointer flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+            <!-- 標記 2: 圖片庫 -->
+            <svg class="w-7 h-7 md:w-9 md:h-9 text-gray-500 touch-active cursor-pointer flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+            
+            <!-- 文字輸入框 -->
+            <div class="flex-1 bg-white rounded-full flex items-center px-4 py-2 md:py-3 border border-gray-300 shadow-sm">
+                <input type="text" id="chatInput" class="w-full bg-transparent outline-none text-base md:text-xl" placeholder="輸入訊息...">
+                <!-- 標記 3: 表情符號 -->
+                <svg class="w-6 h-6 md:w-8 md:h-8 text-gray-400 cursor-pointer ml-2 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            </div>
+            
+            <!-- 發送 / 麥克風切換按鈕 -->
+            <button id="sendBtn" class="text-gray-500 hover:text-green-500 touch-active flex-shrink-0 p-1">
+                <!-- 預設麥克風 Icon -->
+                <svg id="micIcon" class="w-7 h-7 md:w-9 md:h-9" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
+                <!-- 打字時切換為發送 Icon (預設隱藏) -->
+                <svg id="planeIcon" class="w-7 h-7 md:w-9 md:h-9 hidden text-[#06C755]" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
             </button>
         </div>
-    </header>
-
-    <!-- 主內容區 -->
-    <main class="flex-1 p-6 md:p-8 lg:p-10 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 md:gap-8 lg:gap-12 overflow-y-auto">
-        
-        <!-- 卡片 1：天氣/狀態資訊 -->
-        <div class="bg-gray-800 rounded-3xl p-8 lg:p-12 shadow-xl border border-gray-700 flex flex-col justify-center items-center text-center touch-card cursor-pointer">
-            <div class="text-yellow-400 mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 md:h-32 md:w-32 lg:h-40 lg:w-40" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-            </div>
-            <h2 class="text-5xl md:text-7xl font-bold">28°C</h2>
-            <p class="text-2xl md:text-4xl text-gray-400 mt-4">室內溫度適宜</p>
-        </div>
-
-        <!-- 卡片 2：公告區 -->
-        <div class="bg-blue-900 rounded-3xl p-8 lg:p-12 shadow-xl border border-blue-700 flex flex-col justify-center touch-card cursor-pointer xl:col-span-2">
-            <h2 class="text-4xl md:text-6xl font-bold mb-8 text-blue-200">系統公告</h2>
-            <ul class="space-y-6 text-2xl md:text-4xl lg:text-5xl text-blue-100 leading-tight">
-                <li class="flex items-start gap-4">
-                    <span class="mt-3 h-4 w-4 md:h-6 md:w-6 flex-shrink-0 rounded-full bg-blue-400"></span> 
-                    <span>歡迎使用智慧展示系統</span>
-                </li>
-                <li class="flex items-start gap-4">
-                    <span class="mt-3 h-4 w-4 md:h-6 md:w-6 flex-shrink-0 rounded-full bg-blue-400"></span> 
-                    <span>本介面已針對平板觸控與電視顯示進行最佳化</span>
-                </li>
-            </ul>
-        </div>
-
-        <!-- 卡片 3：互動按鈕 -->
-        <button class="bg-green-700 hover:bg-green-600 active:bg-green-800 rounded-3xl p-8 lg:p-12 shadow-xl border border-green-600 flex flex-col justify-center items-center text-center touch-card cursor-pointer w-full">
-            <div class="text-white mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-24 w-24 md:h-32 md:w-32 lg:h-40 lg:w-40" viewBox="0 0 20 20" fill="currentColor">
-                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd" />
-                </svg>
-            </div>
-            <h2 class="text-4xl md:text-6xl font-bold">開始簡報</h2>
-            <p class="text-xl md:text-3xl text-green-200 mt-4">點擊此處播放內容</p>
-        </button>
-
-        <!-- 卡片 4：大型互動按鈕 -->
-        <button class="bg-cyan-700 hover:bg-cyan-600 active:bg-cyan-800 rounded-3xl p-8 lg:p-12 shadow-xl border border-cyan-600 flex flex-col justify-center items-center text-center touch-card cursor-pointer w-full md:col-span-2 xl:col-span-1">
-            <h2 class="text-5xl md:text-7xl font-bold text-white mb-6">觸控區</h2>
-            <p class="text-2xl md:text-4xl text-cyan-100">支援多點觸控</p>
-        </button>
-
-        <!-- 卡片 5：虛擬 LINE 對話練習窗 -->
-        <div class="rounded-3xl shadow-2xl border-4 border-gray-700 flex flex-col overflow-hidden bg-white w-full h-[600px] lg:h-[700px] md:col-span-2 xl:col-span-2">
-            <!-- LINE 標題列 -->
-            <div class="bg-[#06C755] text-white p-4 md:p-6 flex items-center justify-between shadow-sm z-10">
-                <div class="flex items-center gap-4">
-                    <svg class="w-8 h-8 md:w-10 md:h-10 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
-                    <span class="font-bold text-2xl md:text-4xl tracking-wide">會話練習</span>
-                </div>
-                <div class="flex gap-6">
-                    <svg class="w-8 h-8 md:w-10 md:h-10 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    <svg class="w-8 h-8 md:w-10 md:h-10 cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
-                </div>
-            </div>
-            
-            <!-- 聊天內容區 -->
-            <div class="flex-1 bg-[#749DB8] p-4 md:p-8 overflow-y-auto flex flex-col gap-6 scroll-smooth" id="chatBox">
-                <!-- 日期 -->
-                <div class="text-center my-2">
-                    <span class="bg-black/20 text-white text-sm md:text-xl px-4 py-2 rounded-full backdrop-blur-sm">今天</span>
-                </div>
-                
-                <!-- 初始提示訊息 -->
-                <div class="flex gap-4 items-start animate-fade-in-up">
-                    <div class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gray-100 flex-shrink-0 flex items-center justify-center text-3xl md:text-4xl shadow-md border-2 border-white">🎓</div>
-                    <div class="flex flex-col gap-1">
-                        <span class="text-white text-lg md:text-xl drop-shadow-md ml-1">系統提示</span>
-                        <div class="bg-white text-black p-4 md:p-5 rounded-3xl rounded-tl-none max-w-[85%] shadow-md text-xl md:text-3xl leading-relaxed">
-                            您好！這裡是會話練習專區。<br>請輸入文字後，使用下方的<span class="font-bold text-gray-600">「對方」</span>或<span class="font-bold text-[#06C755]">「自己」</span>按鈕來模擬雙方對話。
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 輸入區 (改為雙向發送) -->
-            <div class="bg-gray-100 p-4 md:p-6 flex gap-3 md:gap-4 items-center border-t border-gray-300">
-                <!-- 作為對方發送按鈕 -->
-                <button class="bg-gray-400 hover:bg-gray-500 text-white rounded-2xl px-4 py-3 md:px-6 md:py-4 transition-colors flex-shrink-0 shadow-md active:scale-95 flex flex-col items-center justify-center" id="chatSendLeftBtn">
-                    <span class="text-lg md:text-2xl font-bold">👤 對方</span>
-                </button>
-                
-                <!-- 文字輸入框 -->
-                <input type="text" class="flex-1 bg-white rounded-full px-6 py-4 md:py-5 outline-none text-black text-xl md:text-3xl shadow-inner border border-gray-200 focus:border-[#06C755] transition-colors" placeholder="輸入對話..." id="chatInput">
-                
-                <!-- 作為自己發送按鈕 -->
-                <button class="bg-[#06C755] hover:bg-[#05a546] text-white rounded-2xl px-4 py-3 md:px-6 md:py-4 transition-colors flex-shrink-0 shadow-md active:scale-95 flex flex-col items-center justify-center" id="chatSendRightBtn">
-                    <span class="text-lg md:text-2xl font-bold">我 💬</span>
-                </button>
-            </div>
-        </div>
-    </main>
+    </div>
 
     <script>
-        // --- 1. 時間更新邏輯 ---
-        function updateTime() {
-            const now = new Date();
-            const timeString = now.toLocaleTimeString('zh-TW', { 
-                hour12: false, 
-                hour: '2-digit', 
-                minute: '2-digit', 
-                second: '2-digit' 
-            });
-            document.getElementById('clock').textContent = timeString;
-        }
-        setInterval(updateTime, 1000);
-        updateTime(); 
+        // ================= 狀態資料 =================
+        let chatTitle = "春日部防衛隊";
+        
+        // 發言人清單設定 (isMe: true 代表訊息會出現在右邊)
+        let speakers = [
+            { id: 'me', name: '我', icon: '👦', isMe: true },
+            { id: 'masao', name: '正男', icon: '🍙', isMe: false, fullname: '正男 (Masao)' },
+            { id: 'kazama', name: '風間', icon: '👦🏻', isMe: false, fullname: '風間 (Kazama)' }
+        ];
+        
+        // 預設選中「我」
+        let currentSpeakerId = 'me';
 
-        // --- 2. 全螢幕控制邏輯 ---
-        const fullscreenBtn = document.getElementById('fullscreenBtn');
-        fullscreenBtn.addEventListener('click', () => {
-            if (!document.fullscreenElement) {
-                if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen();
-                } else if (document.documentElement.webkitRequestFullscreen) { 
-                    document.documentElement.webkitRequestFullscreen();
-                } else if (document.documentElement.msRequestFullscreen) { 
-                    document.documentElement.msRequestFullscreen();
-                }
-            } else {
-                if (document.exitFullscreen) {
-                    document.exitFullscreen();
-                } else if (document.webkitExitFullscreen) { 
-                    document.webkitExitFullscreen();
-                } else if (document.msExitFullscreen) { 
-                    document.msExitFullscreen();
-                }
+        // 預設聊天紀錄 (仿造圖片內容)
+        let messages = [
+            {
+                speakerId: 'masao',
+                text: "小新，今天要出去玩嗎？<br>Shin, do you want to go out to play today?",
+                time: "08:00"
+            },
+            {
+                speakerId: 'me',
+                text: "好哇，我們公園見。OK, see you in the park.",
+                time: "08:02"
             }
-        });
+        ];
 
-        // --- 3. 避免平板上的右鍵選單 (選用) ---
-        window.addEventListener('contextmenu', function (e) { 
-            if(e.target.tagName !== 'INPUT') { // 允許輸入框出現選單(如貼上)
-                e.preventDefault(); 
-            }
-        }, false);
-
-        // --- 4. 虛擬 LINE 雙向會話練習邏輯 ---
-        const chatInput = document.getElementById('chatInput');
-        const chatSendLeftBtn = document.getElementById('chatSendLeftBtn');
-        const chatSendRightBtn = document.getElementById('chatSendRightBtn');
+        // ================= DOM 元素 =================
         const chatBox = document.getElementById('chatBox');
+        const speakerList = document.getElementById('speakerList');
+        const chatInput = document.getElementById('chatInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const micIcon = document.getElementById('micIcon');
+        const planeIcon = document.getElementById('planeIcon');
+        const titleEl = document.getElementById('chatTitle');
 
-        function addChatMessage(text, isSelf) {
-            if (!text.trim()) return;
+        // ================= 初始化 =================
+        function init() {
+            renderSpeakers();
+            renderMessages();
+            scrollToBottom();
+        }
+
+        // ================= 改名功能 =================
+        function renameChat() {
+            const newName = prompt("請輸入新的群組名稱：", chatTitle);
+            if (newName && newName.trim() !== "") {
+                chatTitle = newName.trim();
+                titleEl.textContent = chatTitle;
+            }
+        }
+
+        // ================= 渲染發言人選單 =================
+        function renderSpeakers() {
+            speakerList.innerHTML = '';
             
-            const msgDiv = document.createElement('div');
+            // 繪製既有發言人
+            speakers.forEach(speaker => {
+                const isSelected = speaker.id === currentSpeakerId;
+                
+                // 動態產生 HTML
+                const html = `
+                    <div class="flex flex-col items-center cursor-pointer touch-active" onclick="selectSpeaker('${speaker.id}')">
+                        <div class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-2xl md:text-3xl bg-white shadow-sm border-[3px] transition-colors ${isSelected ? 'border-[#06C755]' : 'border-transparent opacity-60'}">
+                            ${speaker.icon}
+                        </div>
+                        <span class="text-xs md:text-sm mt-1 ${isSelected ? 'text-gray-800 font-bold' : 'text-gray-500'}">${speaker.name}</span>
+                    </div>
+                `;
+                speakerList.insertAdjacentHTML('beforeend', html);
+            });
+
+            // 加入「新增發言人」按鈕
+            const addBtnHtml = `
+                <div class="flex flex-col items-center cursor-pointer touch-active" onclick="addNewSpeaker()">
+                    <div class="w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center text-2xl md:text-3xl bg-white shadow-sm border-[3px] border-dashed border-gray-300 text-gray-400 opacity-80">
+                        +
+                    </div>
+                    <span class="text-xs md:text-sm mt-1 text-gray-400">新增</span>
+                </div>
+            `;
+            speakerList.insertAdjacentHTML('beforeend', addBtnHtml);
+        }
+
+        // 選擇發言人
+        function selectSpeaker(id) {
+            currentSpeakerId = id;
+            renderSpeakers(); // 重新渲染更新綠色框框
+            chatInput.focus(); // 保持輸入焦點
+        }
+
+        // 新增發言人功能
+        function addNewSpeaker() {
+            const name = prompt("請輸入新角色的名稱：\n(例如：妮妮)");
+            if (!name) return;
+            const icon = prompt("請輸入代表該角色的 Emoji：\n(例如：🐰)", "🐰");
+            if (!icon) return;
+
+            const newId = 'user_' + Date.now();
+            speakers.push({
+                id: newId,
+                name: name.substring(0, 4), // 簡稱
+                fullname: name,
+                icon: icon,
+                isMe: false // 預設新增的都是別人(顯示在左邊)
+            });
+            
+            selectSpeaker(newId);
+        }
+
+        // ================= 渲染聊天內容 =================
+        function renderMessages() {
+            chatBox.innerHTML = '';
+            
+            messages.forEach(msg => {
+                const speaker = speakers.find(s => s.id === msg.speakerId) || speakers[0];
+                const msgEl = document.createElement('div');
+                msgEl.className = 'w-full flex animate-pop-in';
+
+                if (speaker.isMe) {
+                    // 我方訊息 (靠右)
+                    msgEl.classList.add('justify-end');
+                    msgEl.innerHTML = `
+                        <div class="flex items-end gap-2 max-w-[85%]">
+                            <span class="text-xs md:text-sm text-gray-200 mb-1">${msg.time}</span>
+                            <div class="bg-[#9DE556] text-black text-lg md:text-2xl px-4 py-3 rounded-2xl relative shadow-sm bubble-right" style="word-break: break-word;">
+                                ${msg.text}
+                            </div>
+                        </div>
+                    `;
+                } else {
+                    // 對方訊息 (靠左)
+                    msgEl.classList.add('justify-start');
+                    msgEl.innerHTML = `
+                        <div class="flex items-start gap-3 max-w-[85%]">
+                            <!-- 頭像 -->
+                            <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-white flex items-center justify-center text-2xl flex-shrink-0 shadow-sm mt-1">
+                                ${speaker.icon}
+                            </div>
+                            <!-- 名字與氣泡 -->
+                            <div class="flex flex-col gap-1">
+                                <span class="text-xs md:text-sm text-white ml-1 drop-shadow-md">${speaker.fullname || speaker.name}</span>
+                                <div class="flex items-end gap-2">
+                                    <div class="bg-white text-black text-lg md:text-2xl px-4 py-3 rounded-2xl relative shadow-sm bubble-left" style="word-break: break-word;">
+                                        ${msg.text}
+                                    </div>
+                                    <span class="text-xs md:text-sm text-gray-200 mb-1 flex-shrink-0">${msg.time}</span>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+                chatBox.appendChild(msgEl);
+            });
+        }
+
+        // ================= 訊息發送邏輯 =================
+        function sendMessage() {
+            const text = chatInput.value.trim();
+            if (!text) return;
+
+            // 取得現在時間 HH:MM
             const now = new Date();
             const timeStr = now.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
 
-            if (isSelf) {
-                // 自己送出的綠色氣泡 (靠右)
-                msgDiv.className = 'flex gap-3 items-end justify-end mt-2 animate-fade-in-up';
-                msgDiv.innerHTML = `
-                    <div class="flex flex-col items-end text-sm md:text-lg text-gray-200 mb-2">
-                        <span>已讀</span>
-                        <span>${timeStr}</span>
-                    </div>
-                    <div class="bg-[#85E249] text-black p-4 md:p-5 rounded-3xl rounded-tr-none max-w-[75%] shadow-md text-xl md:text-3xl leading-relaxed break-words">
-                        ${text}
-                    </div>
-                `;
-            } else {
-                // 對方送出的白色氣泡 (靠左)
-                msgDiv.className = 'flex gap-4 items-start mt-2 animate-fade-in-up';
-                msgDiv.innerHTML = `
-                    <div class="w-12 h-12 md:w-16 md:h-16 rounded-full bg-gray-100 flex-shrink-0 flex items-center justify-center text-3xl md:text-4xl shadow-md border-2 border-white">👤</div>
-                    <div class="flex flex-col gap-1 w-full">
-                        <span class="text-white text-lg md:text-xl drop-shadow-md ml-1">學生/對方</span>
-                        <div class="bg-white text-black p-4 md:p-5 rounded-3xl rounded-tl-none max-w-[85%] shadow-md text-xl md:text-3xl leading-relaxed break-words">
-                            ${text}
-                        </div>
-                    </div>
-                `;
-            }
+            // 轉換換行符號
+            const formattedText = text.replace(/\n/g, '<br>');
+
+            messages.push({
+                speakerId: currentSpeakerId,
+                text: formattedText,
+                time: timeStr
+            });
+
+            chatInput.value = '';
+            toggleSendIcon(); // 重置 Icon
             
-            chatBox.appendChild(msgDiv);
-            
-            // 延遲一點點確保 DOM 渲染後再滾動到最底端
+            renderMessages();
+            scrollToBottom();
+            chatInput.focus();
+        }
+
+        function scrollToBottom() {
             setTimeout(() => {
                 chatBox.scrollTo({ top: chatBox.scrollHeight, behavior: 'smooth' });
             }, 50);
         }
 
-        // 處理發送動作 (isSelf 決定是哪一邊)
-        function handleSendChat(isSelf) {
-            const text = chatInput.value;
-            if (text) {
-                addChatMessage(text, isSelf);
-                chatInput.value = '';
-                chatInput.focus();
+        // 監聽輸入框變化，切換麥克風/發送圖示
+        function toggleSendIcon() {
+            if (chatInput.value.trim().length > 0) {
+                micIcon.classList.add('hidden');
+                planeIcon.classList.remove('hidden');
+            } else {
+                micIcon.classList.remove('hidden');
+                planeIcon.classList.add('hidden');
             }
         }
 
-        // 綁定左邊按鈕 (作為對方/學生)
-        chatSendLeftBtn.addEventListener('click', () => handleSendChat(false));
+        // 綁定事件
+        chatInput.addEventListener('input', toggleSendIcon);
         
-        // 綁定右邊按鈕 (作為自己/老師)
-        chatSendRightBtn.addEventListener('click', () => handleSendChat(true));
-        
-        // 綁定 Enter 鍵 (預設為自己發送)
-        chatInput.addEventListener('keypress', (e) => {
+        chatInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                handleSendChat(true);
+                sendMessage();
             }
         });
+
+        sendBtn.addEventListener('click', function() {
+            if (chatInput.value.trim().length > 0) {
+                sendMessage();
+            } else {
+                // 如果是麥克風狀態點擊，可以設定為語音輸入的提示
+                alert("語音輸入功能可在此擴充！");
+            }
+        });
+
+        // 啟動應用
+        init();
+
     </script>
 </body>
 </html>
