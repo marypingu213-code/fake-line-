@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>會話練習系統 - 鎖定版</title>
+    <title>會話練習系統 - 多人連線版</title>
     <!-- 使用 Tailwind CSS 快速排版 -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
@@ -19,7 +19,6 @@
             -webkit-user-select: auto;
         }
 
-        /* 自訂表情選單的滾動條，讓其稍微可見但美觀 */
         #emojiPicker::-webkit-scrollbar {
             display: block;
             width: 6px;
@@ -33,7 +32,6 @@
             border-radius: 8px;
         }
 
-        /* 聊天氣泡的小尾巴 */
         .bubble-left::before {
             content: "";
             position: absolute;
@@ -53,13 +51,11 @@
             border-color: transparent #9DE556 transparent transparent;
         }
 
-        /* 點擊回饋動畫 */
         .touch-active:active {
             transform: scale(0.95);
             opacity: 0.8;
         }
         
-        /* 訊息進場動畫 */
         @keyframes popIn {
             0% { opacity: 0; transform: translateY(10px) scale(0.98); }
             100% { opacity: 1; transform: translateY(0) scale(1); }
@@ -67,6 +63,18 @@
         .animate-pop-in {
             animation: popIn 0.2s ease-out forwards;
         }
+        
+        /* 連線狀態燈號 */
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .status-online { background-color: #06C755; box-shadow: 0 0 8px #06C755; }
+        .status-offline { background-color: #ef4444; }
     </style>
 </head>
 <body class="bg-gray-800 h-screen w-screen flex justify-center items-center font-sans overflow-hidden relative">
@@ -76,34 +84,36 @@
         
         <!-- ================= 頂部標題列 ================= -->
         <header class="flex items-center justify-between px-4 py-4 md:py-5 text-white z-10 border-b border-white/10">
-            <div class="flex items-center gap-3 md:gap-4 overflow-hidden">
-                <!-- 返回按鈕 -->
+            <div class="flex items-center gap-2 md:gap-4 overflow-hidden">
                 <svg class="w-6 h-6 md:w-8 md:h-8 touch-active cursor-pointer flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
                 
-                <!-- 群組名稱 -->
-                <div class="flex items-center gap-2 cursor-pointer touch-active truncate" onclick="renameChat()" title="點擊改名">
-                    <h1 id="chatTitle" class="text-xl md:text-3xl font-bold truncate">春日部防衛隊</h1>
-                    <span class="bg-white/20 text-white text-xs md:text-sm px-2 py-0.5 rounded-full" id="memberCount">3</span>
+                <!-- 群組名稱與連線狀態 -->
+                <div class="flex flex-col cursor-pointer touch-active overflow-hidden" onclick="renameChat()" title="點擊改名">
+                    <div class="flex items-center gap-2">
+                        <h1 id="chatTitle" class="text-xl md:text-3xl font-bold truncate">春日部防衛隊</h1>
+                        <span class="bg-white/20 text-white text-xs md:text-sm px-2 py-0.5 rounded-full" id="memberCount">3</span>
+                    </div>
+                    <div class="text-xs text-gray-200 mt-0.5 flex items-center">
+                        <span id="syncStatusDot" class="status-dot status-offline"></span>
+                        <span id="syncStatusText">離線 (未同步)</span>
+                    </div>
                 </div>
             </div>
             
-            <div class="flex items-center gap-4 md:gap-6 flex-shrink-0">
-                <!-- 載入 Icon -->
-                <label class="cursor-pointer touch-active" title="載入對話紀錄">
-                    <input type="file" id="uploadFile" class="hidden" accept=".json">
-                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                </label>
-                <!-- 下載/儲存 Icon -->
-                <button id="downloadBtn" class="touch-active cursor-pointer" title="下載對話紀錄">
+            <div class="flex items-center gap-3 md:gap-5 flex-shrink-0">
+                <!-- QR Code 邀請按鈕 -->
+                <button onclick="openQrModal()" class="touch-active cursor-pointer bg-white/20 p-1.5 md:p-2 rounded-xl hover:bg-white/30 transition-colors" title="顯示 QR Code 邀請學生">
+                    <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h3v3h-3zM20 20h-3v-3h3v3zM14 17h6M17 14v6"></path></svg>
+                </button>
+                
+                <button id="downloadBtn" class="touch-active cursor-pointer" title="備份對話紀錄">
                     <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                 </button>
                 
-                <!-- 群組人員 / 鎖定狀態 Icon -->
                 <div id="memberBtn" class="touch-active cursor-pointer relative" onclick="handleMemberBtnClick()" title="選擇發言人">
                     <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
                 </div>
                 
-                <!-- 漢堡選單 -->
                 <svg class="w-7 h-7 md:w-9 md:h-9 touch-active cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path></svg>
             </div>
         </header>
@@ -115,35 +125,23 @@
 
         <!-- ================= 底部輸入區 ================= -->
         <div class="bg-[#F3F4F6] px-3 py-3 md:px-5 md:py-4 flex items-center gap-2 md:gap-3 pb-6 sm:pb-4 border-t border-gray-300 relative z-30">
-            <!-- 圓圈加號 -->
             <svg class="w-7 h-7 md:w-9 md:h-9 text-gray-500 touch-active cursor-pointer flex-shrink-0 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <!-- 相機 -->
             <svg class="w-7 h-7 md:w-9 md:h-9 text-gray-500 touch-active cursor-pointer flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-            <!-- 圖片庫 -->
             <svg class="w-7 h-7 md:w-9 md:h-9 text-gray-500 touch-active cursor-pointer flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             
-            <!-- 文字輸入框 (內含鎖定頭像提示) -->
             <div class="flex-1 bg-white rounded-full flex items-center px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 shadow-sm transition-all focus-within:border-[#06C755] focus-within:ring-2 focus-within:ring-[#06C755]/20 relative">
-                
-                <!-- 顯示目前是誰在打字的小頭像 -->
-                <div id="currentAvatarIndicator" class="w-7 h-7 md:w-9 md:h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm md:text-lg flex-shrink-0 border border-gray-200 mr-2 overflow-hidden" title="目前發言身分">
-                    👦
-                </div>
-
+                <div id="currentAvatarIndicator" class="w-7 h-7 md:w-9 md:h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm md:text-lg flex-shrink-0 border border-gray-200 mr-2 overflow-hidden" title="目前發言身分">👦</div>
                 <input type="text" id="chatInput" class="w-full bg-transparent outline-none text-base md:text-xl" placeholder="輸入訊息...">
                 
-                <!-- Emoji 按鈕 -->
                 <button id="emojiBtn" class="ml-1 flex-shrink-0 hover:text-yellow-500 transition-colors">
                     <svg class="w-6 h-6 md:w-8 md:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 </button>
                 
-                <!-- 擴充版：表情貼圖彈出視窗 (加入高度限制與滾動條) -->
                 <div id="emojiPicker" class="hidden absolute bottom-[120%] right-0 bg-white rounded-2xl shadow-xl border border-gray-200 p-3 w-72 md:w-96 h-80 overflow-y-auto z-50 animate-pop-in">
                     <div id="emojiGrid" class="grid grid-cols-6 md:grid-cols-8 gap-3 text-2xl md:text-3xl text-center"></div>
                 </div>
             </div>
             
-            <!-- 發送 / 麥克風按鈕 -->
             <button id="sendBtn" class="text-gray-500 hover:text-[#06C755] touch-active flex-shrink-0 p-1 transition-colors relative">
                 <svg id="micIcon" class="w-7 h-7 md:w-9 md:h-9 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"></path></svg>
                 <svg id="planeIcon" class="w-7 h-7 md:w-9 md:h-9 hidden text-[#06C755]" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
@@ -153,10 +151,9 @@
         <!-- 虛擬鍵盤容器 -->
         <div id="virtualKeyboard" class="hidden bg-[#D1D5DB] p-2 md:p-4 flex-col gap-1 md:gap-2 shadow-[inset_0_4px_6px_-1px_rgba(0,0,0,0.1)] z-20">
             <div class="flex justify-between items-center mb-1 px-1">
-                <span class="text-xs text-gray-600 font-bold">注音虛擬鍵盤 (輔助拼音使用，選字建議使用系統鍵盤或語音)</span>
+                <span class="text-xs text-gray-600 font-bold">注音虛擬鍵盤</span>
                 <button id="vkClose" class="text-gray-700 bg-gray-200 px-3 py-1 rounded-lg shadow border border-gray-300 text-sm active:bg-gray-400">▼ 關閉</button>
             </div>
-            <!-- 使用 grid-cols-11 來排版注音鍵盤 -->
             <div id="vkGrid" class="grid grid-cols-11 gap-1 md:gap-2"></div>
             <div class="grid grid-cols-4 gap-1 md:gap-2 mt-1 md:mt-2">
                 <button id="vkSpace" class="col-span-3 bg-white shadow rounded-lg p-2 md:p-3 text-lg font-bold active:bg-gray-200 touch-active">空白鍵 Space</button>
@@ -166,41 +163,54 @@
 
         <!-- ================= 右側滑出式角色名單側邊欄 ================= -->
         <div id="memberSidebar" class="absolute top-0 right-0 h-full w-full sm:w-80 bg-white shadow-[auto_0_25px_50px_-12px_rgba(0,0,0,0.5)] z-50 transform translate-x-full transition-transform duration-300 flex flex-col rounded-r-[2rem] sm:rounded-none">
-            <!-- Sidebar Header -->
             <div class="p-4 md:p-5 border-b flex justify-between items-center bg-gray-50 rounded-tr-[2rem] sm:rounded-none">
                 <h2 class="text-xl font-bold text-gray-800">名單管理</h2>
                 <button onclick="closeMemberSidebar()" class="text-gray-500 hover:text-gray-800 p-1 bg-white rounded-full shadow-sm border border-gray-200 active:scale-95">
                     <svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
                 </button>
             </div>
-            
-            <!-- 提示說明 -->
             <div class="px-4 pt-3 pb-1 text-xs text-gray-500">
                 點擊<span class="font-bold text-gray-700">頭像</span>可上傳圖片；點擊<span class="font-bold text-gray-700">名稱</span>可直接修改。鎖定後即無法變更身分。
             </div>
-
-            <!-- 名單列表 -->
-            <div id="sidebarSpeakerList" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3">
-                <!-- Javascript 動態產生 -->
-            </div>
-            
-            <!-- Footer: 新增按鈕 -->
+            <div id="sidebarSpeakerList" class="flex-1 overflow-y-auto p-4 flex flex-col gap-3"></div>
             <div class="p-4 border-t bg-gray-50 pb-8 sm:pb-4">
                 <button onclick="addNewSpeaker()" class="w-full py-3 md:py-4 bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-95">
                     <span class="text-xl">➕</span> <span>新增成員</span>
                 </button>
             </div>
-            
-            <!-- 隱藏的圖片上傳器 -->
             <input type="file" id="avatarUploader" class="hidden" accept="image/*">
         </div>
-        
-        <!-- 側邊欄展開時的背景遮罩 -->
         <div id="sidebarOverlay" class="absolute inset-0 bg-black/40 z-40 hidden transition-opacity" onclick="closeMemberSidebar()"></div>
+
+        <!-- ================= QR Code 邀請視窗 ================= -->
+        <div id="qrModal" class="hidden absolute inset-0 bg-black/60 z-50 flex justify-center items-center backdrop-blur-sm transition-opacity">
+            <div class="bg-white rounded-3xl p-8 max-w-sm w-[90%] flex flex-col items-center shadow-2xl animate-pop-in relative">
+                <button onclick="closeQrModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800">
+                    <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                </button>
+                <h2 class="text-2xl font-bold text-gray-800 mb-2">邀請學生加入</h2>
+                <p class="text-sm text-gray-500 mb-6 text-center">請學生掃描下方 QR Code<br>即可在自己的設備上同步參與對話</p>
+                
+                <div class="bg-gray-100 p-4 rounded-2xl mb-6">
+                    <!-- QR Code 圖片位置 -->
+                    <img id="qrCodeImg" src="" alt="連線 QR Code" class="w-48 h-48 object-contain">
+                </div>
+                
+                <button onclick="copyLink()" class="w-full py-3 bg-[#06C755] hover:bg-[#05a546] text-white font-bold rounded-xl flex justify-center items-center gap-2 active:scale-95 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    複製連線網址
+                </button>
+            </div>
+        </div>
 
     </div>
 
-    <script>
+    <!-- 載入 Firebase 模組 -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
         // ================= 狀態資料 (全域) =================
         let chatTitle = "春日部防衛隊";
         let isLocked = false; 
@@ -212,16 +222,159 @@
         ];
         
         let currentSpeakerId = 'me';
-
         let messages = [
             { speakerId: 'masao', text: "小新，今天要出去玩嗎？", time: "08:00" },
             { speakerId: 'me', text: "好哇，我們公園見。", time: "08:02" }
         ];
 
-        let editingAvatarSpeakerId = null; // 紀錄正在更換頭像的角色 ID
+        let editingAvatarSpeakerId = null;
+        let isCloudSyncing = false; // 紀錄是否正在從雲端接收資料，避免死迴圈
+
+        // ================= Firebase 與連線設定 =================
+        let db, docRef;
+        let isOnline = false;
+        
+        // 處理網址 Session ID (產生或獲取)
+        const urlParams = new URLSearchParams(window.location.search);
+        let sessionId = urlParams.get('session');
+        let shareUrl = window.location.href;
+
+        if (!sessionId) {
+            sessionId = Math.random().toString(36).substring(2, 9);
+            try {
+                // 嘗試更新網址以便分享
+                const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname + '?session=' + sessionId;
+                shareUrl = newUrl;
+                
+                // 防護機制：若是在 blob 或受限的沙盒環境中，不要呼叫 replaceState
+                if (!window.location.href.startsWith('blob:')) {
+                    window.history.replaceState({ path: newUrl }, '', newUrl);
+                }
+            } catch (e) {
+                console.warn("無法在此環境覆寫網址，將在記憶體中維護 Session ID。");
+            }
+        } else {
+            shareUrl = window.location.href;
+        }
+
+        // 初始化 Firebase
+        async function initFirebase() {
+            let firebaseConfig;
+            
+            // 系統環境變數注入檢查
+            if (typeof __firebase_config !== 'undefined') {
+                firebaseConfig = JSON.parse(__firebase_config);
+            } else {
+                // ==========================================
+                // ⚠️ 老師請注意：若您將此程式碼放到自己的 GitHub Pages，
+                // 請在此處填寫您的 Firebase 設定檔！否則多人連線功能將無法使用。
+                // ==========================================
+                firebaseConfig = null; 
+            }
+
+            if (!firebaseConfig || !firebaseConfig.apiKey) {
+                console.warn("未偵測到 Firebase 雲端設定，系統將以『離線單機模式』運行。");
+                updateConnectionStatus(false);
+                return false; // 以單機模式執行
+            }
+
+            try {
+                const app = initializeApp(firebaseConfig);
+                const auth = getAuth(app);
+                db = getFirestore(app);
+                
+                const appId = typeof __app_id !== 'undefined' ? __app_id : 'tv-dashboard-app';
+
+                // 進行匿名登入以取得權限
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+
+                // 設定 Firestore 文件路徑
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        docRef = doc(db, 'artifacts', appId, 'public', 'data', 'chatSessions', sessionId);
+                        updateConnectionStatus(true);
+                        setupCloudSync(); // 啟動即時同步
+                    }
+                });
+            } catch (error) {
+                console.error("Firebase 初始化失敗:", error);
+                updateConnectionStatus(false);
+            }
+        }
+
+        // 啟動雲端同步監聽
+        function setupCloudSync() {
+            onSnapshot(docRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    isCloudSyncing = true; // 標記為接收中，避免觸發上傳
+                    const data = docSnap.data();
+                    
+                    chatTitle = data.title || chatTitle;
+                    speakers = data.speakers || speakers;
+                    messages = data.messages || messages;
+
+                    const titleEl = document.getElementById('chatTitle');
+                    const memberCountEl = document.getElementById('memberCount');
+                    if (titleEl) titleEl.textContent = chatTitle;
+                    if (memberCountEl) memberCountEl.textContent = speakers.length;
+
+                    renderMessages();
+                    
+                    // 如果側邊欄是開著的，同步更新畫面
+                    if (!document.getElementById('memberSidebar').classList.contains('translate-x-full')) {
+                        renderSidebarSpeakers();
+                    }
+                    
+                    updateLockedUI();
+                    scrollToBottom();
+                    
+                    isCloudSyncing = false;
+                } else {
+                    // 如果這是新開的房間，把預設資料推上雲端
+                    saveToCloud();
+                }
+            }, (error) => {
+                console.error("同步失敗:", error);
+                updateConnectionStatus(false);
+            });
+        }
+
+        // 將變更存檔到雲端
+        async function saveToCloud() {
+            if (isCloudSyncing || !isOnline || !docRef) return; // 接收中或離線時不發送
+            
+            try {
+                await setDoc(docRef, {
+                    title: chatTitle,
+                    speakers: speakers,
+                    messages: messages,
+                    updatedAt: new Date().toISOString()
+                }, { merge: true });
+            } catch (error) {
+                console.error("上傳雲端失敗:", error);
+            }
+        }
+
+        function updateConnectionStatus(connected) {
+            isOnline = connected;
+            const dot = document.getElementById('syncStatusDot');
+            const text = document.getElementById('syncStatusText');
+            if(dot && text) {
+                if(connected) {
+                    dot.className = 'status-dot status-online';
+                    text.textContent = '已連線 (即時同步中)';
+                } else {
+                    dot.className = 'status-dot status-offline';
+                    text.textContent = '離線單機模式';
+                }
+            }
+        }
 
         // ================= 核心邏輯函式 =================
-
         function getAvatarHtml(speaker, textClass = '') {
             if (speaker.image) {
                 return `<img src="${speaker.image}" class="w-full h-full object-cover">`;
@@ -231,44 +384,64 @@
         }
 
         function init() {
+            initFirebase(); // 啟動網路連線
             updateLockedUI();
             renderMessages();
             scrollToBottom();
+            
+            // 產生 QR Code 圖片，使用安全獲取的 shareUrl
+            const qrImg = document.getElementById('qrCodeImg');
+            if(qrImg) {
+                qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`;
+            }
         }
 
-        function renameChat() {
+        window.renameChat = function() {
             const newName = prompt("請輸入新的群組名稱：", chatTitle);
             const titleEl = document.getElementById('chatTitle');
             if (newName && newName.trim() !== "" && titleEl) {
                 chatTitle = newName.trim();
                 titleEl.textContent = chatTitle;
+                saveToCloud(); // 雲端同步
             }
-        }
+        };
 
-        function handleMemberBtnClick() {
+        window.handleMemberBtnClick = function() {
             if (isLocked) {
-                alert("🔒 身分已鎖定！\n若需更換發言角色，請重新整理網頁（關閉並重新開啟）。");
+                alert("🔒 身分已鎖定！\n若需更換發言角色，請重新整理網頁。");
             } else {
                 openMemberSidebar();
             }
-        }
+        };
 
-        function openMemberSidebar() {
+        window.openMemberSidebar = function() {
             renderSidebarSpeakers();
-            const sidebar = document.getElementById('memberSidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            if(sidebar) sidebar.classList.remove('translate-x-full');
-            if(overlay) overlay.classList.remove('hidden');
-        }
+            document.getElementById('memberSidebar').classList.remove('translate-x-full');
+            document.getElementById('sidebarOverlay').classList.remove('hidden');
+        };
 
-        function closeMemberSidebar() {
-            const sidebar = document.getElementById('memberSidebar');
-            const overlay = document.getElementById('sidebarOverlay');
-            if(sidebar) sidebar.classList.add('translate-x-full');
-            if(overlay) overlay.classList.add('hidden');
-        }
+        window.closeMemberSidebar = function() {
+            document.getElementById('memberSidebar').classList.add('translate-x-full');
+            document.getElementById('sidebarOverlay').classList.add('hidden');
+        };
 
-        function renderSidebarSpeakers() {
+        window.openQrModal = function() {
+            document.getElementById('qrModal').classList.remove('hidden');
+        };
+
+        window.closeQrModal = function() {
+            document.getElementById('qrModal').classList.add('hidden');
+        };
+
+        window.copyLink = function() {
+            navigator.clipboard.writeText(shareUrl).then(() => {
+                alert("網址已複製！您可以直接貼給學生。");
+            }).catch(() => {
+                alert("無法複製網址，請手動複製上方連結。");
+            });
+        };
+
+        window.renderSidebarSpeakers = function() {
             const list = document.getElementById('sidebarSpeakerList');
             if (!list) return;
 
@@ -290,9 +463,9 @@
                     </div>
                 `;
             });
-        }
+        };
 
-        function lockSpeaker(id) {
+        window.lockSpeaker = function(id) {
             const speaker = speakers.find(s => s.id === id);
             if (speaker && confirm(`確定要以「${speaker.fullname || speaker.name}」的身份發言嗎？\n⚠️ 鎖定後將無法再更換身分！`)) {
                 currentSpeakerId = id;
@@ -302,9 +475,9 @@
                 const chatInput = document.getElementById('chatInput');
                 if (chatInput) chatInput.focus();
             }
-        }
+        };
 
-        function addNewSpeaker() {
+        window.addNewSpeaker = function() {
             const newId = 'user_' + Date.now();
             speakers.push({
                 id: newId,
@@ -319,26 +492,106 @@
             if (memberCountEl) memberCountEl.textContent = speakers.length;
             
             renderSidebarSpeakers();
+            saveToCloud(); // 雲端同步
+            
             setTimeout(() => {
                 const list = document.getElementById('sidebarSpeakerList');
                 if (list) list.scrollTop = list.scrollHeight;
             }, 50);
-        }
+        };
 
-        function updateSpeakerName(id, newName) {
+        window.updateSpeakerName = function(id, newName) {
             const speaker = speakers.find(s => s.id === id);
             if (speaker && newName.trim() !== '') {
                 speaker.fullname = newName.trim();
                 speaker.name = newName.trim().substring(0, 5); 
                 renderMessages();
+                saveToCloud(); // 雲端同步
             }
-        }
+        };
 
-        function triggerAvatarUpload(id) {
+        window.triggerAvatarUpload = function(id) {
             editingAvatarSpeakerId = id;
             const avatarUploader = document.getElementById('avatarUploader');
             if (avatarUploader) avatarUploader.click();
+        };
+
+        // 壓縮圖片大小 (避免超過 Firebase 1MB 限制)
+        function resizeImage(base64Str, maxWidth = 150, maxHeight = 150) {
+            return new Promise((resolve) => {
+                let img = new Image();
+                img.src = base64Str;
+                img.onload = () => {
+                    let canvas = document.createElement('canvas');
+                    let width = img.width;
+                    let height = img.height;
+
+                    if (width > height) {
+                        if (width > maxWidth) {
+                            height *= maxWidth / width;
+                            width = maxWidth;
+                        }
+                    } else {
+                        if (height > maxHeight) {
+                            width *= maxHeight / height;
+                            height = maxHeight;
+                        }
+                    }
+                    canvas.width = width;
+                    canvas.height = height;
+                    let ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', 0.8));
+                };
+            });
         }
+
+        // 綁定檔案上傳事件
+        document.addEventListener('DOMContentLoaded', () => {
+            const avatarUploader = document.getElementById('avatarUploader');
+            if (avatarUploader) {
+                avatarUploader.addEventListener('change', function(e) {
+                    const file = e.target.files[0];
+                    if (!file) return;
+
+                    const reader = new FileReader();
+                    reader.onload = async function(evt) {
+                        const base64Image = evt.target.result;
+                        // 壓縮圖片
+                        const resizedBase64 = await resizeImage(base64Image);
+                        
+                        const speaker = speakers.find(s => s.id === editingAvatarSpeakerId);
+                        if (speaker) {
+                            speaker.image = resizedBase64;
+                            speaker.icon = ''; 
+                            renderSidebarSpeakers();
+                            renderMessages();
+                            updateLockedUI();
+                            saveToCloud(); // 雲端同步
+                        }
+                        avatarUploader.value = ''; 
+                    };
+                    reader.readAsDataURL(file); 
+                });
+            }
+            
+            // --- 檔案下載邏輯 (備份) ---
+            const downloadBtn = document.getElementById('downloadBtn');
+            if (downloadBtn) {
+                downloadBtn.addEventListener('click', function() {
+                    const data = { title: chatTitle, speakers: speakers, messages: messages };
+                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `${chatTitle}_對話紀錄.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                });
+            }
+        });
 
         function updateLockedUI() {
             const speaker = speakers.find(s => s.id === currentSpeakerId) || speakers[0];
@@ -443,6 +696,8 @@
             renderMessages();
             scrollToBottom();
             chatInput.focus();
+            
+            saveToCloud(); // 雲端同步
         }
 
         function scrollToBottom() {
@@ -452,87 +707,9 @@
             }, 50);
         }
 
-        // ================= 事件監聽與 DOM 綁定區塊 (加入防呆保護) =================
-        // 等待所有 HTML 元素讀取完成後再執行，避免 null 錯誤
+        // ================= 事件監聽與其他 UI =================
         document.addEventListener('DOMContentLoaded', () => {
 
-            // --- 檔案下載邏輯 ---
-            const downloadBtn = document.getElementById('downloadBtn');
-            if (downloadBtn) {
-                downloadBtn.addEventListener('click', function() {
-                    const data = { title: chatTitle, speakers: speakers, messages: messages };
-                    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-                    const url = URL.createObjectURL(blob);
-                    const a = document.createElement('a');
-                    a.href = url;
-                    a.download = `${chatTitle}_對話紀錄.json`;
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                    URL.revokeObjectURL(url);
-                });
-            }
-
-            // --- 檔案上傳與頭像上傳邏輯 ---
-            const uploadFile = document.getElementById('uploadFile');
-            if (uploadFile) {
-                uploadFile.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (!file) return;
-                    
-                    const reader = new FileReader();
-                    reader.onload = function(evt) {
-                        try {
-                            const data = JSON.parse(evt.target.result);
-                            if (data.title) chatTitle = data.title;
-                            if (data.speakers) speakers = data.speakers;
-                            if (data.messages) messages = data.messages;
-                            
-                            const titleEl = document.getElementById('chatTitle');
-                            const memberCountEl = document.getElementById('memberCount');
-                            if (titleEl) titleEl.textContent = chatTitle;
-                            if (memberCountEl) memberCountEl.textContent = speakers.length;
-                            
-                            isLocked = false; 
-                            if(speakers.length > 0) currentSpeakerId = speakers[0].id;
-                            
-                            updateLockedUI();
-                            renderMessages();
-                            scrollToBottom();
-                            alert("載入成功！學生名單與紀錄已更新。");
-                        } catch(err) {
-                            alert("讀取失敗：檔案格式不正確！");
-                        }
-                        e.target.value = '';
-                    };
-                    reader.readAsText(file);
-                });
-            }
-
-            const avatarUploader = document.getElementById('avatarUploader');
-            if (avatarUploader) {
-                avatarUploader.addEventListener('change', function(e) {
-                    const file = e.target.files[0];
-                    if (!file) return;
-
-                    const reader = new FileReader();
-                    reader.onload = function(evt) {
-                        const base64Image = evt.target.result;
-                        const speaker = speakers.find(s => s.id === editingAvatarSpeakerId);
-                        if (speaker) {
-                            speaker.image = base64Image;
-                            speaker.icon = ''; // 清除原本的 emoji
-                            renderSidebarSpeakers();
-                            renderMessages();
-                            updateLockedUI();
-                        }
-                        avatarUploader.value = ''; 
-                    };
-                    reader.readAsDataURL(file); 
-                });
-            }
-
-            // --- 輸入框與虛擬鍵盤邏輯 ---
             const chatInput = document.getElementById('chatInput');
             if (chatInput) {
                 chatInput.addEventListener('input', toggleSendIcon);
@@ -598,7 +775,7 @@
                 };
             }
 
-            // --- 擴充版表情貼圖邏輯 ---
+            // 表情貼圖邏輯
             const emojiGrid = document.getElementById('emojiGrid');
             const emojiPicker = document.getElementById('emojiPicker');
             const emojiBtn = document.getElementById('emojiBtn');
@@ -652,7 +829,7 @@
                 });
             }
 
-            // --- 語音輸入與發送邏輯 (Web Speech API) ---
+            // 語音輸入邏輯
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
             let recognition;
             
