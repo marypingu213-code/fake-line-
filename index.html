@@ -25,7 +25,7 @@
 </head>
 <body class="bg-gray-800 h-screen w-screen flex justify-center items-center font-sans overflow-hidden relative">
 
-    <!-- App 總容器：使用 Flex 排版讓聊天室與側邊欄能並排 -->
+    <!-- App 總容器 -->
     <div class="flex flex-row h-full w-full max-w-[80rem] sm:h-[95vh] justify-center sm:items-center transition-all duration-300 px-0 sm:px-4">
         
         <!-- ================= 主聊天視窗 ================= -->
@@ -66,7 +66,8 @@
                 
                 <div class="flex-1 bg-white rounded-full flex items-center px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 shadow-sm relative">
                     <div id="currentAvatarIndicator" class="w-7 h-7 md:w-9 md:h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm md:text-lg flex-shrink-0 border border-gray-200 mr-2 overflow-hidden">👦</div>
-                    <input type="text" id="chatInput" class="w-full bg-transparent outline-none text-base md:text-xl" placeholder="輸入訊息...">
+                    <!-- 加入 enterkeyhint="send" 優化手機原生的鍵盤送出按鈕 -->
+                    <input type="text" id="chatInput" class="w-full bg-transparent outline-none text-base md:text-xl" placeholder="輸入訊息..." enterkeyhint="send">
                     <button id="emojiBtn" class="ml-1 shrink-0 hover:text-yellow-500 transition-colors"><svg class="w-6 h-6 md:w-8 md:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>
                     <div id="emojiPicker" class="hidden absolute bottom-[120%] right-0 bg-white rounded-2xl shadow-xl border border-gray-200 p-3 w-72 md:w-96 h-80 overflow-y-auto z-50 animate-pop-in">
                         <div id="emojiGrid" class="grid grid-cols-6 md:grid-cols-8 gap-3 text-2xl md:text-3xl text-center"></div>
@@ -78,19 +79,7 @@
                     <svg id="planeIcon" class="w-7 h-7 md:w-9 md:h-9 hidden text-[#06C755]" fill="currentColor" viewBox="0 0 20 20"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z"></path></svg>
                 </button>
             </div>
-
-            <!-- 虛擬鍵盤 (主視窗內部) -->
-            <div id="virtualKeyboard" class="hidden bg-[#D1D5DB] p-2 md:p-4 flex-col gap-1 md:gap-2 shadow-[inset_0_4px_6px_-1px_rgba(0,0,0,0.1)] z-20 shrink-0">
-                <div class="flex justify-between items-center mb-1 px-1">
-                    <span class="text-xs text-gray-600 font-bold">注音虛擬鍵盤</span>
-                    <button id="vkClose" class="text-gray-700 bg-gray-200 px-3 py-1 rounded-lg shadow border border-gray-300 text-sm active:bg-gray-400">▼ 關閉</button>
-                </div>
-                <div id="vkGrid" class="grid grid-cols-11 gap-1 md:gap-2"></div>
-                <div class="grid grid-cols-4 gap-1 md:gap-2 mt-1 md:mt-2">
-                    <button id="vkSpace" class="col-span-3 bg-white shadow rounded-lg p-2 md:p-3 text-lg font-bold active:bg-gray-200 touch-active">空白鍵 Space</button>
-                    <button id="vkBksp" class="col-span-1 bg-[#9CA3AF] text-white shadow rounded-lg p-2 md:p-3 text-lg font-bold active:bg-gray-500 touch-active">⌫ 退格</button>
-                </div>
-            </div>
+            <!-- 已移除無選字功能的裝飾用虛擬鍵盤，讓原生設備鍵盤能順利彈出 -->
         </div>
 
         <!-- ================= 名單管理側邊欄 ================= -->
@@ -268,7 +257,6 @@
             else btn.innerHTML = `<svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>`;
         };
 
-        // --- 彈窗修復重點：正確的 add('hidden') 與 remove('flex') ---
         window.openQrModal = () => { 
             document.getElementById('qrCodeImg').src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}`; 
             const m = document.getElementById('qrModal'); m.classList.remove('hidden'); m.classList.add('flex'); 
@@ -315,7 +303,7 @@
             window.renderStatsList(true);
             const btn = document.getElementById('aiEvalBtn'); btn.disabled = true; btn.textContent = "AI 分析中...";
             
-            // AI 模擬評分邏輯 (為確保教學流暢，此處使用自動評估)
+            // AI 模擬評分邏輯
             setTimeout(() => {
                 window.currentStatsData.forEach(s => { 
                     if(s.count > 0) { 
@@ -334,13 +322,7 @@
             const i = document.getElementById('chatInput');
             i.oninput = window.toggleSendIcon;
             i.onkeypress = (e) => { if(e.key === 'Enter') window.sendMessage(); };
-            i.onfocus = () => { document.getElementById('virtualKeyboard').classList.remove('hidden'); document.getElementById('virtualKeyboard').classList.add('flex'); window.scrollToBottom(); };
-            document.getElementById('vkClose').onclick = () => { document.getElementById('virtualKeyboard').classList.add('hidden'); document.getElementById('virtualKeyboard').classList.remove('flex'); };
-            document.getElementById('vkSpace').onclick = () => { i.value += ' '; window.toggleSendIcon(); };
-            document.getElementById('vkBksp').onclick = () => { i.value = i.value.slice(0, -1); window.toggleSendIcon(); };
-            
-            const keys = ['ㄅ','ㄉ','ˇ','ˋ','ㄓ','ˊ','˙','ㄚ','ㄞ','ㄢ','ㄦ','ㄆ','ㄊ','ㄍ','ㄐ','ㄔ','ㄗ','ㄧ','ㄛ','ㄟ','ㄣ','?','ㄇ','ㄋ','ㄎ','ㄑ','ㄕ','ㄘ','ㄨ','ㄜ','ㄠ','ㄤ','!','ㄈ','ㄌ','ㄏ','ㄒ','ㄖ','ㄙ','ㄩ','ㄝ','ㄡ','ㄥ','@'];
-            keys.forEach(k => { const b = document.createElement('button'); b.className = "bg-white shadow rounded p-2 md:p-3 font-bold active:bg-gray-200 active:scale-95 transition-all"; b.textContent = k; b.onclick = () => { i.value += k; window.toggleSendIcon(); }; document.getElementById('vkGrid').appendChild(b); });
+            i.onfocus = () => { window.scrollToBottom(); }; // 原本會彈出客製虛擬鍵盤，現在改為單純滾動到底部
             
             // 【修復】完整恢復麥克風語音辨識功能
             const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
