@@ -562,22 +562,22 @@
             window.printCharts = [];
 
             targetStudents.forEach((s, index) => {
-                // 產生 15 個指標的緊湊式排版 (節省A4垂直空間)
-                let dimHtml = '<div class="flex flex-col gap-3 mt-4">';
+                // 產生 15 個指標的緊湊式排版 (節省A4垂直空間，確保單頁滿版)
+                let dimHtml = '<div class="flex flex-col gap-1.5 mt-2">';
                 s.dimensions.forEach(dim => {
                     let indHtml = dim.indicators.map(ind => `
-                        <div class="flex items-center gap-2 mb-1.5 leading-snug">
-                            <span class="text-[13px] font-bold text-gray-800 whitespace-nowrap min-w-[130px]">${ind.name}</span>
-                            <span class="text-[14px] font-black text-indigo-600 whitespace-nowrap">${ind.score}<span class="text-[10px] font-normal text-gray-500 ml-0.5">分</span></span>
-                            <span class="text-[12px] text-gray-600 ml-2 border-l-2 border-indigo-100 pl-2">${ind.comment}</span>
+                        <div class="flex items-center gap-2 mb-0.5 leading-tight">
+                            <span class="text-[12px] font-bold text-gray-800 whitespace-nowrap min-w-[120px]">${ind.name}</span>
+                            <span class="text-[13px] font-black text-indigo-600 whitespace-nowrap w-[30px]">${ind.score}<span class="text-[9px] font-normal text-gray-500 ml-0.5">分</span></span>
+                            <span class="text-[11px] text-gray-600 ml-1 border-l-2 border-indigo-100 pl-2 truncate">${ind.comment}</span>
                         </div>
                     `).join('');
 
                     dimHtml += `
-                        <div class="border border-indigo-100 rounded-xl p-3 bg-white shadow-sm print-break-inside-avoid">
-                            <div class="flex justify-between items-center border-b border-indigo-100 pb-1.5 mb-2 bg-indigo-50/50 px-2 rounded-t-lg">
-                                <span class="font-bold text-indigo-800 text-[15px]">${dim.name}</span>
-                                <span class="font-black text-indigo-600 text-[16px]">${dim.score} <span class="text-[10px] font-normal text-gray-500">分</span></span>
+                        <div class="border border-indigo-100 rounded-lg p-2 bg-white shadow-sm print-break-inside-avoid">
+                            <div class="flex justify-between items-center border-b border-indigo-100 pb-1 mb-1 bg-indigo-50/50 px-2 rounded-t-md">
+                                <span class="font-bold text-indigo-800 text-[13px]">${dim.name}</span>
+                                <span class="font-black text-indigo-600 text-[14px]">${dim.score} <span class="text-[9px] font-normal text-gray-500">分</span></span>
                             </div>
                             <div class="px-1">${indHtml}</div>
                         </div>
@@ -585,40 +585,33 @@
                 });
                 dimHtml += '</div>';
 
-                // 組合完整的單頁 A4 報告
+                // 組合完整的單頁 A4 報告 (移除最上方佔空間的標題)
                 const page = document.createElement('div');
-                page.className = 'print-page w-full max-w-[19cm] mx-auto font-sans text-gray-800 bg-white';
+                page.className = 'print-page w-full max-w-[19cm] mx-auto font-sans text-gray-800 bg-white pt-4';
                 page.innerHTML = `
-                    <div class="text-center mb-4">
-                        <h1 class="text-2xl font-black text-gray-800 tracking-widest">AI 數位會話參與度分析報告</h1>
-                        <p class="text-gray-500 text-xs mt-1 font-medium">分析時間：${new Date().toLocaleString('zh-TW', {hour12:false})} | 評估基準：5大向度、15項指標</p>
-                    </div>
-                    
-                    <div class="flex items-center justify-between border-2 border-indigo-100 rounded-2xl p-4 mb-4 bg-indigo-50/20 print-break-inside-avoid">
-                        <div class="flex flex-col items-center justify-center w-1/3 border-r-2 border-indigo-100">
-                            <div class="w-24 h-24 rounded-full border-4 border-white overflow-hidden flex justify-center items-center text-4xl bg-gray-100 shadow-md mb-2">
+                    <div class="flex items-center justify-between border-2 border-indigo-100 rounded-xl p-3 mb-2 bg-indigo-50/20 print-break-inside-avoid">
+                        <div class="flex flex-col items-center justify-center w-[35%] border-r-2 border-indigo-100">
+                            <div class="w-16 h-16 rounded-full border-2 border-white overflow-hidden flex justify-center items-center text-3xl bg-gray-100 shadow-sm mb-1">
                                 ${getAvatarHtml(s, '')}
                             </div>
-                            <h2 class="text-2xl font-bold text-gray-800">${s.fullname || s.name}</h2>
-                            <div class="text-center mt-2">
-                                <span class="text-[11px] text-gray-500 font-bold block">總合表現評分</span>
-                                <span class="text-5xl font-black text-indigo-600">${s.totalScore}</span>
+                            <h2 class="text-xl font-bold text-gray-800">${s.fullname || s.name}</h2>
+                            <div class="text-center mt-1">
+                                <span class="text-[10px] text-gray-500 font-bold block leading-none mb-0.5">總合表現評分</span>
+                                <span class="text-4xl font-black text-indigo-600 leading-none">${s.totalScore}</span>
                             </div>
                         </div>
-                        <div class="w-2/3 flex justify-center items-center h-[220px]">
+                        <div class="w-[65%] flex justify-center items-center h-[160px]">
                             <canvas id="printRadar-${index}"></canvas>
                         </div>
                     </div>
                     
-                    <div class="text-[15px] font-black text-gray-800 border-b-2 border-indigo-200 pb-1 mb-2">核心指標分析細節</div>
-                    
                     ${dimHtml}
                     
-                    <div class="mt-4 p-4 bg-indigo-50 rounded-xl text-sm font-bold text-indigo-900 border border-indigo-200 print-break-inside-avoid flex gap-3 items-start">
-                        <span class="text-xl leading-none">💡</span>
+                    <div class="mt-3 p-3 bg-indigo-50 rounded-lg text-sm font-bold text-indigo-900 border border-indigo-200 print-break-inside-avoid flex gap-2 items-start">
+                        <span class="text-lg leading-none mt-0.5">💡</span>
                         <div>
-                            <div class="text-xs text-indigo-500 mb-1">老師總結與建議：</div>
-                            ${s.overallComment}
+                            <div class="text-[11px] text-indigo-500 mb-0.5 leading-none">老師總結與建議：</div>
+                            <div class="text-[13px] font-medium leading-snug">${s.overallComment}</div>
                         </div>
                     </div>
                 `;
@@ -640,7 +633,7 @@
                     options: {
                         animation: false, // 關閉動畫確保列印前瞬間完成渲染
                         responsive: true, maintainAspectRatio: false,
-                        scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, display: false }, pointLabels: { font: { size: 11, weight: 'bold' }, color: '#4B5563' } } },
+                        scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, display: false }, pointLabels: { font: { size: 10, weight: 'bold' }, color: '#4B5563' } } },
                         plugins: { legend: { display: false } }
                     }
                 });
