@@ -33,16 +33,16 @@
         #printArea { position: absolute; left: -9999px; top: -9999px; width: 21cm; visibility: hidden; z-index: -1; background: white; }
         
         @media print {
-            @page { size: A4 portrait; margin: 5mm; } /* 強制縮減頁面邊界留白 */
+            @page { size: A4 portrait; margin: 8mm; } /* 給予印表機安全的邊距，避免裁切邊緣 */
             body { background-color: white !important; overflow: visible !important; height: auto !important; width: 100% !important; margin: 0; padding: 0; }
             body > div:not(#printArea) { display: none !important; }
             #printArea { display: block !important; position: relative !important; left: 0 !important; top: 0 !important; width: 100% !important; visibility: visible !important; margin: 0; padding: 0; }
             
-            /* 每張獨立一頁，強制最大高度避免跨頁 */
+            /* 每張獨立一頁，不再使用隱藏溢出的暴力做法，改採彈性滿版 */
             .print-page { 
                 page-break-after: always; break-after: page; 
-                padding: 2mm 5mm; margin: 0 auto; box-sizing: border-box; 
-                width: 100%; max-height: 287mm; overflow: hidden;
+                padding: 0; margin: 0 auto; box-sizing: border-box; 
+                width: 100%; height: auto;
             }
             .print-page:last-child { page-break-after: auto; break-after: auto; }
             .print-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
@@ -58,7 +58,6 @@
         <!-- ================= 主聊天視窗 ================= -->
         <div class="w-full h-full max-w-3xl sm:rounded-[3rem] sm:border-[12px] border-gray-900 bg-[#7BA3B8] flex flex-col relative overflow-hidden shadow-2xl shrink sm:shrink-0 z-20 transition-all duration-300">
             
-            <!-- 頂部標題列 -->
             <header class="flex items-center justify-between px-4 py-4 md:py-5 text-white z-10 border-b border-white/10 shrink-0">
                 <div class="flex items-center gap-2 md:gap-4 overflow-hidden">
                     <svg class="w-6 h-6 md:w-8 md:h-8 touch-active cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
@@ -79,7 +78,6 @@
                     <button id="uploadBtn" class="touch-active bg-white/20 p-1.5 md:p-2 rounded-xl hover:bg-white/30 transition-colors" title="讀取對話紀錄 (.json)"><svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg></button>
                     <button id="downloadBtn" class="touch-active" title="備份對話紀錄"><svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg></button>
                     
-                    <!-- 結束對話並評估按鈕 -->
                     <button onclick="openStatsModal()" class="touch-active bg-red-500/90 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl hover:bg-red-500 transition-colors flex items-center gap-1 font-bold text-sm md:text-base shadow-sm" title="結束對話並評估">
                         <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
                         <span class="hidden sm:inline">結束對話</span>
@@ -130,7 +128,7 @@
         </div>
     </div>
 
-    <!-- 背景遮罩 (供手機版使用) -->
+    <!-- 背景遮罩 -->
     <div id="sidebarOverlay" class="fixed inset-0 bg-black/40 z-40 hidden sm:hidden" onclick="closeMemberSidebar()"></div>
 
     <!-- ================= 邀請 QR Code 彈窗 ================= -->
@@ -174,7 +172,7 @@
                 <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-800 p-1 bg-gray-100 rounded-full active:scale-95"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
             </div>
             
-            <!-- Web: A(頭像名字) | B(總分) | C(雷達圖) 完美三等分並排 -->
+            <!-- Web: A(頭像名字) | B(總分) | C(雷達圖) 三等分並排 -->
             <div class="flex items-center justify-between bg-indigo-50/30 border border-indigo-100 rounded-2xl p-4 mb-4 shrink-0 mt-6 sm:mt-0">
                 <div class="flex flex-col items-center justify-center w-[25%] border-r-2 border-indigo-100">
                     <div id="detailAvatar" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-white overflow-hidden flex justify-center items-center text-3xl bg-gray-100 shadow-sm mb-1"></div>
@@ -231,7 +229,7 @@
         let messages = [];
         let isLocked = false;
         let isCloudSyncing = false;
-        let isChatEnded = false; // 控制是否鎖定全體對話輸入的旗標
+        let isChatEnded = false; 
 
         const urlParams = new URLSearchParams(window.location.search);
         let sessionId = urlParams.get('session') || Math.random().toString(36).substring(2, 9);
@@ -248,12 +246,12 @@
                     chatTitle = data.title || chatTitle;
                     speakers = data.speakers || speakers;
                     messages = data.messages || messages;
-                    isChatEnded = data.isEnded || false; // 接收雲端的鎖定狀態
+                    isChatEnded = data.isEnded || false; 
                     
                     document.getElementById('chatTitle').textContent = chatTitle;
                     document.getElementById('memberCount').textContent = speakers.length;
                     
-                    window.toggleInputLock(); // 根據狀態鎖定或解鎖輸入框
+                    window.toggleInputLock(); 
                     
                     renderMessages();
                     updateLockedUI();
@@ -432,7 +430,6 @@
             window.renderStatsList(true);
             const btn = document.getElementById('aiEvalBtn'); btn.disabled = true; btn.textContent = "🔄 AI 15 項指標深度分析中...";
             
-            // 建立動態化 AI 評語產生器，區分「固定描述(desc)」與「AI動態評論(comment)」
             const evaluateInd = (name, desc, baseScore, excellentMsg, goodMsg, averageMsg) => {
                 const score = Math.min(100, Math.max(60, baseScore + Math.floor(Math.random() * 20 - 10)));
                 let comment = "";
@@ -448,29 +445,29 @@
                     
                     s.dimensions = [
                         { name: "一、語意邏輯與內容質量", indicators: [
-                            evaluateInd("指標1(主題一致性)", "發言能緊扣討論核心。", baseS, "發言精準切中要點，能帶領討論方向。", "多數時候能維持在主題內，表現平穩。", "較容易發散，建議發言前多扣緊核心。"),
-                            evaluateInd("指標2(脈絡銜接度)", "能接續他人提問。", baseS, "承先啟後能力極佳，對話流暢。", "能針對同學的問題給予適當的回應。", "多為獨立發言，較少去承接他人的話題。"),
-                            evaluateInd("指標3(訊息清晰度)", "語句完整易讀。", baseS, "表達清晰透徹，毫無語意模糊的狀況。", "語句通順，基本溝通無礙。", "部分句子較為破碎，需稍加猜測語意。")
+                            evaluateInd("指標1(主題一致性)", "評估發言是否緊扣核心。", baseS, "發言精準切中要點，能帶領討論方向。", "多數時候能維持在主題內，表現平穩。", "較容易發散，建議發言前多扣緊核心。"),
+                            evaluateInd("指標2(脈絡銜接度)", "評估是否能接續提問。", baseS, "承先啟後能力極佳，對話非常流暢。", "能針對同學的問題給予適當的回應。", "多為獨立發言，較少去承接他人話題。"),
+                            evaluateInd("指標3(訊息清晰度)", "評估語句是否完整。", baseS, "表達清晰透徹，毫無語意模糊狀況。", "語句通順，基本溝通無礙。", "部分句子較為破碎，需稍加猜測語意。")
                         ]},
                         { name: "二、互動時效與參與行為", indicators: [
-                            evaluateInd("指標4(回應潛伏期)", "回應速度非常快。", baseS, "回覆極為迅速，高度參與對話。", "回應速度正常，能跟上大家節奏。", "較晚才做出回應，容易錯過討論時機。"),
-                            evaluateInd("指標5(發言密度)", "頻率適中，無洗版情形。", baseS, "發言節奏掌控極佳，不會過度洗版。", "發言頻率適中，符合一般討論情境。", "發言稍微密集或太少，需注意頻率。"),
-                            evaluateInd("指標6(話題主導)", "能適時拋出新想法。", baseS, "能主動提出新觀點，激發群組思考。", "偶爾能提出想法，多為附和居多。", "多半順著他人的話題走，較少主動提問。")
+                            evaluateInd("指標4(回應潛伏期)", "評估回應速度是否夠快。", baseS, "回覆極為迅速，高度參與對話。", "回應速度正常，能跟上大家節奏。", "較晚才做出回應，容易錯過討論時機。"),
+                            evaluateInd("指標5(發言密度)", "評估頻率是否適中。", baseS, "發言節奏掌控極佳，不會過度洗版。", "發言頻率適中，符合一般討論情境。", "發言稍微密集或太少，需注意頻率。"),
+                            evaluateInd("指標6(話題主導)", "評估能否拋出新想法。", baseS, "能主動提出新觀點，激發群組思考。", "偶爾能提出想法，多為附和居多。", "多半順著他人的話題走，較少提問。")
                         ]},
                         { name: "三、數位表達與符號素養", indicators: [
-                            evaluateInd("指標7(非語文運用)", "貼圖表情使用精準。", baseS, "能完美運用表情貼圖來豐富語氣。", "有使用貼圖輔助，表現中規中矩。", "極少使用貼圖，文字看起來較為生硬。"),
-                            evaluateInd("指標8(功能標籤)", "熟練掌握通訊功能。", baseS, "非常熟悉各種數位通訊的表達方式。", "具備基本的數位軟體操作概念。", "數位工具使用上看起來較為生疏。"),
-                            evaluateInd("指標9(分段可讀)", "訊息長度適合螢幕閱讀。", baseS, "分段排版極佳，非常適合螢幕閱讀。", "文字長度適中，不會造成閱讀負擔。", "有時句子太長未斷句，影響閱讀體驗。")
+                            evaluateInd("指標7(非語文運用)", "評估貼圖表情使用。", baseS, "能完美運用表情貼圖來豐富語氣。", "有使用貼圖輔助，表現中規中矩。", "極少使用貼圖，文字看起來較為生硬。"),
+                            evaluateInd("指標8(功能標籤)", "評估通訊功能熟練度。", baseS, "非常熟悉各種數位通訊的表達方式。", "具備基本的數位軟體操作概念。", "數位工具使用上看起來較為生疏。"),
+                            evaluateInd("指標9(分段可讀)", "評估訊息長度與排版。", baseS, "分段排版極佳，非常適合螢幕閱讀。", "文字長度適中，不會造成閱讀負擔。", "有時句子太長未斷句，影響閱讀體驗。")
                         ]},
                         { name: "四、社交情緒與協作態度", indicators: [
-                            evaluateInd("指標10(情感色彩)", "討論態度正向積極。", baseS, "態度極度正向，能感染群組氣氛。", "態度友善，能維持良好的互動關係。", "發言稍微平淡，可以多展現一點熱情。"),
-                            evaluateInd("指標11(支持性回饋)", "有給予同儕鼓勵與肯定。", baseS, "經常給予同學鼓勵與讚美，非常棒！", "偶爾會給予同學正向的回饋。", "較少給予同學支持性的言語。"),
-                            evaluateInd("指標12(衝突處理)", "討論氣氛融洽和諧。", baseS, "能營造極佳的團隊和諧感。", "與同學相處融洽，無任何摩擦。", "溝通上稍嫌直白，需注意團隊氣氛。")
+                            evaluateInd("指標10(情感色彩)", "評估態度是否正向。", baseS, "態度極度正向，能感染群組氣氛。", "態度友善，能維持良好的互動關係。", "發言稍微平淡，可以多展現一點熱情。"),
+                            evaluateInd("指標11(支持性回饋)", "評估是否給予肯定。", baseS, "經常給予同學鼓勵與讚美，非常棒！", "偶爾會給予同學正向的回饋。", "較少給予同學支持性的言語。"),
+                            evaluateInd("指標12(衝突處理)", "評估討論氣氛是否融洽。", baseS, "能營造極佳的團隊和諧感。", "與同學相處融洽，無任何摩擦。", "溝通上稍嫌直白，需注意團隊氣氛。")
                         ]},
                         { name: "五、語言規範與適切性", indicators: [
-                            evaluateInd("指標13(錯別字與注音)", "用字精確，無錯字。", baseS, "用字遣詞極為精準，完全沒有錯別字。", "偶有錯字但不影響整體語意理解。", "錯別字或注音文較多，需多加注意。"),
-                            evaluateInd("指標14(語氣合宜度)", "使用適當的語氣對話。", baseS, "語氣非常得體，充分展現良好禮貌。", "使用的語氣正常合宜。", "語氣有時較為隨便，可稍微調整。"),
-                            evaluateInd("指標15(言簡意賅)", "表達精煉，不拖沓。", baseS, "表達一針見血，非常精煉有重點。", "能用適當的字數把事情交代清楚。", "有時表達稍微冗長，可以再更簡潔些。")
+                            evaluateInd("指標13(錯字與注音)", "評估用字是否無錯字。", baseS, "用字遣詞極為精準，完全沒有錯別字。", "偶有錯字但不影響整體語意理解。", "錯別字或注音文較多，需多加注意。"),
+                            evaluateInd("指標14(語氣合宜度)", "評估是否使用適當語氣。", baseS, "語氣非常得體，充分展現良好禮貌。", "使用的語氣正常合宜。", "語氣有時較為隨便，可稍微調整。"),
+                            evaluateInd("指標15(言簡意賅)", "評估表達是否精煉。", baseS, "表達一針見血，非常精煉有重點。", "能用適當的字數把事情交代清楚。", "有時表達稍微冗長，可以再更簡潔些。")
                         ]}
                     ];
                     
@@ -515,7 +512,7 @@
                     }]
                 },
                 options: {
-                    devicePixelRatio: 2, // Web 畫面也是用高解析渲染
+                    devicePixelRatio: 2,
                     responsive: true, maintainAspectRatio: false,
                     scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, display: false }, pointLabels: { font: { size: 11, weight: 'bold' }, color: '#4B5563' } } },
                     plugins: { legend: { display: false } }
@@ -529,13 +526,15 @@
                 dim.indicators.forEach(ind => {
                     // Web: (名稱+分數) 拉出左方空間 | (固定描述+動態評論)
                     indicatorsHtml += `
-                        <div class="flex items-stretch gap-3 mb-2.5 pb-2.5 border-b border-gray-100 last:border-0 last:pb-0">
-                            <div class="w-[140px] shrink-0 flex flex-col justify-center">
-                                <div class="text-[13px] font-bold text-gray-800 leading-tight">${ind.name}</div>
-                                <div class="text-[18px] font-black text-indigo-600 mt-1">${ind.score}<span class="text-[10px] font-normal text-gray-500 ml-0.5">分</span></div>
+                        <div class="flex items-center gap-3 mb-2 pb-2 border-b border-gray-100 last:border-0 last:pb-0">
+                            <div class="w-[130px] shrink-0 text-[13px] font-bold text-gray-800 leading-tight">
+                                ${ind.name}
                             </div>
-                            <div class="flex flex-col border-l-2 border-indigo-200 pl-4 flex-1 justify-center">
-                                <span class="text-[11px] text-gray-400 mb-1 leading-tight">${ind.desc}</span>
+                            <div class="w-[45px] shrink-0 text-right text-[16px] font-black text-indigo-600">
+                                ${ind.score}<span class="text-[10px] font-normal text-gray-500 ml-[2px]">分</span>
+                            </div>
+                            <div class="flex flex-col border-l-2 border-indigo-200 pl-3 flex-1 justify-center">
+                                <span class="text-[11px] text-gray-400 mb-0.5 leading-tight">${ind.desc}</span>
                                 <span class="text-[13px] text-gray-700 font-medium leading-snug">${ind.comment}</span>
                             </div>
                         </div>
@@ -590,16 +589,18 @@
             window.printCharts = [];
 
             targetStudents.forEach((s, index) => {
-                // 列印版指標排版：極致壓縮空間保證不跨頁
-                let dimHtml = '<div class="flex flex-col gap-1.5 mt-2">';
+                // 列印版指標排版：極致緊湊的三欄式設計 (Name | Score | Descriptions)
+                let dimHtml = '<div class="flex flex-col gap-1 mt-2">';
                 s.dimensions.forEach(dim => {
                     let indHtml = dim.indicators.map(ind => `
-                        <div class="flex items-stretch gap-2 mb-1 pb-1 border-b border-gray-100 last:border-0 last:pb-0">
-                            <div class="w-[130px] shrink-0 flex flex-col justify-center">
-                                <div class="text-[11.5px] font-bold text-gray-800 leading-tight">${ind.name}</div>
-                                <div class="text-[15px] font-black text-indigo-600 mt-0.5">${ind.score}<span class="text-[9px] font-normal text-gray-500 ml-0.5">分</span></div>
+                        <div class="flex items-center gap-1 mb-1 pb-1 border-b border-gray-100 last:border-0 last:pb-0">
+                            <div class="w-[110px] shrink-0 text-[11px] font-bold text-gray-800 leading-tight">
+                                ${ind.name}
                             </div>
-                            <div class="flex flex-col border-l-2 border-indigo-200 pl-3 flex-1 justify-center">
+                            <div class="w-[35px] shrink-0 text-right text-[13px] font-black text-indigo-600">
+                                ${ind.score}<span class="text-[8px] font-normal text-gray-500 ml-[2px]">分</span>
+                            </div>
+                            <div class="flex flex-col border-l-2 border-indigo-200 pl-2 flex-1 justify-center">
                                 <span class="text-[9px] text-gray-400 mb-0.5 leading-none">${ind.desc}</span>
                                 <span class="text-[11.5px] text-gray-700 font-medium leading-snug">${ind.comment}</span>
                             </div>
@@ -618,7 +619,7 @@
                 });
                 dimHtml += '</div>';
 
-                // A/B/C 三等分完美排版設計 (頂部高度壓縮)
+                // A/B/C 三等分完美排版設計 (自然高度不裁切)
                 const page = document.createElement('div');
                 page.className = 'print-page';
                 page.innerHTML = `
@@ -636,18 +637,18 @@
                             <span class="text-4xl font-black text-indigo-600 leading-none">${s.totalScore}</span>
                         </div>
                         <!-- C: 雷達圖 -->
-                        <div class="w-[50%] flex justify-center items-center h-[115px]">
+                        <div class="w-[50%] flex justify-center items-center h-[120px]">
                             <canvas id="printRadar-${index}"></canvas>
                         </div>
                     </div>
                     
                     ${dimHtml}
                     
-                    <div class="mt-1 p-2 bg-indigo-50 rounded-lg text-sm font-bold text-indigo-900 border border-indigo-200 print-break-inside-avoid flex gap-2 items-start">
-                        <span class="text-base leading-none mt-0.5">💡</span>
-                        <div>
+                    <div class="mt-2 p-2.5 bg-indigo-50 rounded-lg text-sm font-bold text-indigo-900 border border-indigo-200 print-break-inside-avoid flex gap-2 items-center">
+                        <span class="text-xl leading-none">💡</span>
+                        <div class="flex-1">
                             <div class="text-[10px] text-indigo-500 mb-0.5 leading-none">AI 總結與建議：</div>
-                            <div class="text-[12px] font-medium leading-snug">${s.overallComment}</div>
+                            <div class="text-[12.5px] font-medium leading-snug">${s.overallComment}</div>
                         </div>
                     </div>
                 `;
