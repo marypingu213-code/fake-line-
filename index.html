@@ -30,16 +30,19 @@
         .rotate-180 { transform: rotate(180deg); }
 
         /* ================= 🖨️ 專屬列印排版樣式 ================= */
+        /* 修正雷達圖 0x0 畫不出來的問題：將列印區塊移到視窗外並保持渲染尺寸 */
+        #printArea { position: absolute; left: -9999px; top: -9999px; width: 21cm; visibility: hidden; z-index: -1; background: white; }
+        
         @media print {
             body { background-color: white !important; overflow: visible !important; height: auto !important; width: 100% !important; margin: 0; padding: 0; }
             /* 隱藏所有不需要印出的網頁介面 */
             body > div:not(#printArea) { display: none !important; }
             
-            /* 只顯示列印專用區塊 */
-            #printArea { display: block !important; position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+            /* 啟動列印專用區塊 */
+            #printArea { display: block !important; position: relative !important; left: 0 !important; top: 0 !important; width: 100% !important; visibility: visible !important; margin: 0; padding: 0; }
             
-            /* 每份報告獨立一張 A4 */
-            .print-page { page-break-after: always; break-after: page; padding: 1.5cm; box-sizing: border-box; }
+            /* 每份報告獨立一張 A4，設定適當邊距 */
+            .print-page { page-break-after: always; break-after: page; padding: 0cm; margin-bottom: 0cm; box-sizing: border-box; }
             .print-page:last-child { page-break-after: auto; break-after: auto; }
             
             /* 避免圖表或文字被切斷 */
@@ -203,7 +206,7 @@
     </div>
 
     <!-- ================= 列印專用隱藏區塊 ================= -->
-    <div id="printArea" class="hidden w-full bg-white text-black"></div>
+    <div id="printArea" class="w-full text-black"></div>
 
     <!-- 載入 Firebase 模組 -->
     <script type="module">
@@ -502,12 +505,10 @@
                 let indicatorsHtml = '';
                 dim.indicators.forEach(ind => {
                     indicatorsHtml += `
-                        <div class="flex justify-between items-center border-b border-gray-100 pb-2 last:border-0 last:pb-0 pt-2 first:pt-0">
-                            <div>
-                                <div class="text-sm font-bold text-gray-700">${ind.name}</div>
-                                <div class="text-xs text-gray-500 mt-0.5">${ind.comment}</div>
-                            </div>
-                            <span class="text-sm font-black text-gray-800">${ind.score} <span class="text-[10px] font-normal text-gray-500">分</span></span>
+                        <div class="flex items-baseline gap-2 mb-1.5 leading-snug">
+                            <span class="text-[13px] font-bold text-gray-800 whitespace-nowrap min-w-[130px]">${ind.name}</span>
+                            <span class="text-[14px] font-black text-indigo-600 whitespace-nowrap">${ind.score}<span class="text-[10px] font-normal text-gray-500 ml-0.5">分</span></span>
+                            <span class="text-[12px] text-gray-600 ml-2 border-l-2 border-indigo-100 pl-2">${ind.comment}</span>
                         </div>
                     `;
                 });
@@ -517,12 +518,12 @@
                         <div class="bg-indigo-50/50 hover:bg-indigo-50 p-3.5 flex justify-between items-center cursor-pointer transition-colors" onclick="toggleAccordion('dim-${idx}')">
                             <span class="font-bold text-indigo-800">${dim.name}</span>
                             <div class="flex items-center gap-3">
-                                <span class="font-black text-indigo-600 text-lg">${dim.score} <span class="text-xs font-normal text-gray-500">分</span></span>
+                                <span class="font-black text-indigo-600 text-lg">${dim.score} <span class="text-[10px] font-normal text-gray-500">分</span></span>
                                 <svg id="icon-dim-${idx}" class="w-5 h-5 text-indigo-400 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                             </div>
                         </div>
                         <div id="dim-${idx}" class="accordion-content bg-white">
-                            <div class="p-4 flex flex-col gap-2 border-t border-indigo-50">
+                            <div class="p-4 flex flex-col gap-1 border-t border-indigo-50">
                                 ${indicatorsHtml}
                             </div>
                         </div>
@@ -545,7 +546,7 @@
             }
         };
 
-        // ================= 🖨️ A4 獨立完美列印系統 =================
+        // ================= 🖨️ A4 獨立完美列印系統 (重構支援 Chart.js 離線渲染) =================
         window.triggerPrint = (studentId = null) => {
             let targetStudents = window.currentStatsData;
             // 如果有指定 ID (從詳細畫面按下列印)，就只印單人；否則印全班
@@ -561,26 +562,24 @@
             window.printCharts = [];
 
             targetStudents.forEach((s, index) => {
-                // 產生 15 個指標的兩欄式網格排版 (節省A4垂直空間)
-                let dimHtml = '<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">';
+                // 產生 15 個指標的緊湊式排版 (節省A4垂直空間)
+                let dimHtml = '<div class="flex flex-col gap-3 mt-4">';
                 s.dimensions.forEach(dim => {
                     let indHtml = dim.indicators.map(ind => `
-                        <div class="mb-2">
-                            <div class="flex justify-between items-end">
-                                <span class="text-[13px] font-bold text-gray-800">${ind.name}</span>
-                                <span class="text-sm font-black text-indigo-600">${ind.score}<span class="text-[10px] font-normal text-gray-500">分</span></span>
-                            </div>
-                            <div class="text-[11px] text-gray-600 leading-tight">${ind.comment}</div>
+                        <div class="flex items-center gap-2 mb-1.5 leading-snug">
+                            <span class="text-[13px] font-bold text-gray-800 whitespace-nowrap min-w-[130px]">${ind.name}</span>
+                            <span class="text-[14px] font-black text-indigo-600 whitespace-nowrap">${ind.score}<span class="text-[10px] font-normal text-gray-500 ml-0.5">分</span></span>
+                            <span class="text-[12px] text-gray-600 ml-2 border-l-2 border-indigo-100 pl-2">${ind.comment}</span>
                         </div>
                     `).join('');
 
                     dimHtml += `
-                        <div class="border border-indigo-100 rounded-xl p-4 bg-indigo-50/30 print-break-inside-avoid">
-                            <div class="flex justify-between items-center border-b border-indigo-200 pb-1 mb-3">
-                                <span class="font-bold text-indigo-800 text-sm">${dim.name}</span>
-                                <span class="font-black text-indigo-600 text-lg">${dim.score} <span class="text-[10px] font-normal text-gray-500">分</span></span>
+                        <div class="border border-indigo-100 rounded-xl p-3 bg-white shadow-sm print-break-inside-avoid">
+                            <div class="flex justify-between items-center border-b border-indigo-100 pb-1.5 mb-2 bg-indigo-50/50 px-2 rounded-t-lg">
+                                <span class="font-bold text-indigo-800 text-[15px]">${dim.name}</span>
+                                <span class="font-black text-indigo-600 text-[16px]">${dim.score} <span class="text-[10px] font-normal text-gray-500">分</span></span>
                             </div>
-                            ${indHtml}
+                            <div class="px-1">${indHtml}</div>
                         </div>
                     `;
                 });
@@ -588,39 +587,37 @@
 
                 // 組合完整的單頁 A4 報告
                 const page = document.createElement('div');
-                page.className = 'print-page w-full max-w-4xl mx-auto font-sans text-gray-800';
+                page.className = 'print-page w-full max-w-[19cm] mx-auto font-sans text-gray-800 bg-white';
                 page.innerHTML = `
-                    <div class="text-center mb-6">
-                        <h1 class="text-3xl font-black text-gray-800 tracking-widest">AI 數位會話參與度分析報告</h1>
-                        <p class="text-gray-500 text-sm mt-2 font-medium">分析時間：${new Date().toLocaleString('zh-TW', {hour12:false})} &nbsp; | &nbsp; 評估基準：5大向度、15項指標</p>
+                    <div class="text-center mb-4">
+                        <h1 class="text-2xl font-black text-gray-800 tracking-widest">AI 數位會話參與度分析報告</h1>
+                        <p class="text-gray-500 text-xs mt-1 font-medium">分析時間：${new Date().toLocaleString('zh-TW', {hour12:false})} | 評估基準：5大向度、15項指標</p>
                     </div>
                     
-                    <div class="flex flex-row items-center justify-between bg-indigo-50/40 p-6 rounded-3xl border border-indigo-100 mb-6 print-break-inside-avoid">
-                        <div class="flex flex-col items-center w-[40%]">
-                            <div class="w-28 h-28 rounded-full border-4 border-indigo-200 overflow-hidden flex justify-center items-center text-6xl bg-white shadow-sm mb-3">
+                    <div class="flex items-center justify-between border-2 border-indigo-100 rounded-2xl p-4 mb-4 bg-indigo-50/20 print-break-inside-avoid">
+                        <div class="flex flex-col items-center justify-center w-1/3 border-r-2 border-indigo-100">
+                            <div class="w-24 h-24 rounded-full border-4 border-white overflow-hidden flex justify-center items-center text-4xl bg-gray-100 shadow-md mb-2">
                                 ${getAvatarHtml(s, '')}
                             </div>
-                            <h2 class="text-3xl font-bold text-gray-800 mb-1">${s.fullname || s.name}</h2>
-                            <div class="text-center mt-3 bg-white px-6 py-2 rounded-2xl border border-indigo-50 shadow-sm">
-                                <span class="text-sm text-gray-500 font-bold block mb-1">總合表現評分</span>
-                                <span class="text-6xl font-black text-indigo-600 drop-shadow-sm">${s.totalScore}</span>
+                            <h2 class="text-2xl font-bold text-gray-800">${s.fullname || s.name}</h2>
+                            <div class="text-center mt-2">
+                                <span class="text-[11px] text-gray-500 font-bold block">總合表現評分</span>
+                                <span class="text-5xl font-black text-indigo-600">${s.totalScore}</span>
                             </div>
                         </div>
-                        <div class="w-[60%] flex justify-center items-center">
-                            <div class="w-[300px] h-[300px]">
-                                <canvas id="printRadar-${index}"></canvas>
-                            </div>
+                        <div class="w-2/3 flex justify-center items-center h-[220px]">
+                            <canvas id="printRadar-${index}"></canvas>
                         </div>
                     </div>
                     
-                    <div class="text-lg font-black text-gray-800 border-b-2 border-indigo-200 pb-2 mb-2">核心指標分析細節</div>
+                    <div class="text-[15px] font-black text-gray-800 border-b-2 border-indigo-200 pb-1 mb-2">核心指標分析細節</div>
                     
                     ${dimHtml}
                     
-                    <div class="mt-6 p-4 bg-indigo-50 rounded-2xl text-base font-bold text-indigo-900 border border-indigo-200 print-break-inside-avoid flex gap-3 items-start">
-                        <span class="text-2xl leading-none">💡</span>
+                    <div class="mt-4 p-4 bg-indigo-50 rounded-xl text-sm font-bold text-indigo-900 border border-indigo-200 print-break-inside-avoid flex gap-3 items-start">
+                        <span class="text-xl leading-none">💡</span>
                         <div>
-                            <div class="text-sm text-indigo-500 mb-1">老師總結與建議：</div>
+                            <div class="text-xs text-indigo-500 mb-1">老師總結與建議：</div>
                             ${s.overallComment}
                         </div>
                     </div>
@@ -641,17 +638,17 @@
                         }]
                     },
                     options: {
-                        animation: false, // 關閉動畫確保列印時已畫好
-                        responsive: true, maintainAspectRatio: true,
-                        scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, display: false }, pointLabels: { font: { size: 14, weight: 'bold' }, color: '#4B5563' } } },
+                        animation: false, // 關閉動畫確保列印前瞬間完成渲染
+                        responsive: true, maintainAspectRatio: false,
+                        scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, display: false }, pointLabels: { font: { size: 11, weight: 'bold' }, color: '#4B5563' } } },
                         plugins: { legend: { display: false } }
                     }
                 });
                 window.printCharts.push(chart);
             });
 
-            // 延遲一點點時間讓圖表畫完，再呼叫系統列印對話框
-            setTimeout(() => { window.print(); }, 500);
+            // 延遲一點點時間確保 Canvas 畫完，再呼叫系統列印對話框
+            setTimeout(() => { window.print(); }, 800);
         };
 
         window.clearChat = () => { 
