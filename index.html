@@ -30,25 +30,17 @@
         .rotate-180 { transform: rotate(180deg); }
 
         /* ================= 🖨️ 專屬列印排版樣式 ================= */
-        /* 修正雷達圖 0x0 畫不出來的問題：將列印區塊移到視窗外並保持渲染尺寸 */
         #printArea { position: absolute; left: -9999px; top: -9999px; width: 21cm; visibility: hidden; z-index: -1; background: white; }
         
         @media print {
             body { background-color: white !important; overflow: visible !important; height: auto !important; width: 100% !important; margin: 0; padding: 0; }
-            /* 隱藏所有不需要印出的網頁介面 */
             body > div:not(#printArea) { display: none !important; }
-            
-            /* 啟動列印專用區塊 */
             #printArea { display: block !important; position: relative !important; left: 0 !important; top: 0 !important; width: 100% !important; visibility: visible !important; margin: 0; padding: 0; }
             
-            /* 每份報告獨立一張 A4，設定適當邊距 */
-            .print-page { page-break-after: always; break-after: page; padding: 0cm; margin-bottom: 0cm; box-sizing: border-box; }
+            /* 調整邊距與分頁，讓A4完美滿版 */
+            .print-page { page-break-after: always; break-after: page; padding: 0.5cm; margin-bottom: 0cm; box-sizing: border-box; }
             .print-page:last-child { page-break-after: auto; break-after: auto; }
-            
-            /* 避免圖表或文字被切斷 */
             .print-break-inside-avoid { break-inside: avoid; page-break-inside: avoid; }
-            
-            /* 強制列印背景顏色與樣式 */
             * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
         }
     </style>
@@ -61,7 +53,6 @@
         <!-- ================= 主聊天視窗 ================= -->
         <div class="w-full h-full max-w-3xl sm:rounded-[3rem] sm:border-[12px] border-gray-900 bg-[#7BA3B8] flex flex-col relative overflow-hidden shadow-2xl shrink sm:shrink-0 z-20 transition-all duration-300">
             
-            <!-- 頂部標題列 -->
             <header class="flex items-center justify-between px-4 py-4 md:py-5 text-white z-10 border-b border-white/10 shrink-0">
                 <div class="flex items-center gap-2 md:gap-4 overflow-hidden">
                     <svg class="w-6 h-6 md:w-8 md:h-8 touch-active cursor-pointer" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>
@@ -82,7 +73,6 @@
                     <button id="uploadBtn" class="touch-active bg-white/20 p-1.5 md:p-2 rounded-xl hover:bg-white/30 transition-colors" title="讀取對話紀錄 (.json)"><svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg></button>
                     <button id="downloadBtn" class="touch-active" title="備份對話紀錄"><svg class="w-6 h-6 md:w-8 md:h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg></button>
                     
-                    <!-- 結束對話並評估按鈕 -->
                     <button onclick="openStatsModal()" class="touch-active bg-red-500/90 text-white px-3 py-1.5 md:px-4 md:py-2 rounded-xl hover:bg-red-500 transition-colors flex items-center gap-1 font-bold text-sm md:text-base shadow-sm" title="結束對話並評估">
                         <svg class="w-4 h-4 md:w-5 md:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10a1 1 0 011-1h4a1 1 0 011 1v4a1 1 0 01-1 1h-4a1 1 0 01-1-1v-4z"></path></svg>
                         <span class="hidden sm:inline">結束對話</span>
@@ -92,10 +82,8 @@
                 </div>
             </header>
 
-            <!-- 聊天內容區 -->
             <main id="chatBox" class="flex-1 overflow-y-auto px-4 py-2 flex flex-col gap-5 pb-4 scroll-smooth"></main>
 
-            <!-- 底部輸入區 -->
             <div class="bg-[#F3F4F6] px-3 py-3 md:px-5 md:py-4 flex items-center gap-2 md:gap-3 pb-6 sm:pb-4 border-t border-gray-300 relative z-30 shrink-0">
                 <svg class="w-7 h-7 md:w-9 md:h-9 text-gray-500 hidden md:block" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <svg class="w-7 h-7 md:w-9 md:h-9 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path><circle cx="12" cy="13" r="3" stroke="currentColor" stroke-width="2"></circle></svg>
@@ -103,7 +91,6 @@
                 
                 <div class="flex-1 bg-white rounded-full flex items-center px-2 py-1.5 md:px-3 md:py-2 border border-gray-300 shadow-sm relative transition-all" id="inputContainer">
                     <div id="currentAvatarIndicator" class="w-7 h-7 md:w-9 md:h-9 rounded-full bg-gray-100 flex items-center justify-center text-sm md:text-lg flex-shrink-0 border border-gray-200 mr-2 overflow-hidden">👦</div>
-                    <!-- 原生鍵盤支援 -->
                     <input type="text" id="chatInput" class="w-full bg-transparent outline-none text-base md:text-xl transition-colors" placeholder="輸入訊息..." enterkeyhint="send">
                     <button id="emojiBtn" class="ml-1 shrink-0 hover:text-yellow-500 transition-colors"><svg class="w-6 h-6 md:w-8 md:h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>
                     <div id="emojiPicker" class="hidden absolute bottom-[120%] right-0 bg-white rounded-2xl shadow-xl border border-gray-200 p-3 w-72 md:w-96 h-80 overflow-y-auto z-50 animate-pop-in">
@@ -180,23 +167,26 @@
                 <button onclick="closeDetailModal()" class="text-gray-400 hover:text-gray-800 p-1 bg-gray-100 rounded-full active:scale-95"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M6 18L18 6M6 6l12 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg></button>
             </div>
             
-            <div class="flex flex-col items-center mb-4 mt-6 sm:mt-0 shrink-0">
-                <div id="detailAvatar" class="w-16 h-16 rounded-full border-2 border-indigo-100 mb-2 overflow-hidden flex justify-center items-center text-3xl bg-gray-50 shadow-sm"></div>
-                <h2 id="detailName" class="text-2xl font-bold text-gray-800">學生名稱</h2>
-                <div class="mt-1 text-center">
-                    <span class="text-sm text-gray-500 font-bold">總合表現評分</span>
-                    <div class="text-5xl font-black text-indigo-600 mt-1 drop-shadow-sm" id="detailTotalScore">0</div>
+            <!-- A(頭像名字) | B(總分) | C(雷達圖) 完美三等分並排 -->
+            <div class="flex items-center justify-between bg-indigo-50/30 border border-indigo-100 rounded-2xl p-4 mb-4 shrink-0 mt-6 sm:mt-0">
+                <!-- A: 頭像與名字 -->
+                <div class="flex flex-col items-center justify-center w-[25%] border-r-2 border-indigo-100">
+                    <div id="detailAvatar" class="w-14 h-14 sm:w-16 sm:h-16 rounded-full border-2 border-white overflow-hidden flex justify-center items-center text-3xl bg-gray-100 shadow-sm mb-1"></div>
+                    <h2 id="detailName" class="text-lg sm:text-xl font-bold text-gray-800 text-center">學生名稱</h2>
+                </div>
+                <!-- B: 總合評分 -->
+                <div class="flex flex-col items-center justify-center w-[25%] border-r-2 border-indigo-100 px-2">
+                    <span class="text-[10px] sm:text-xs text-gray-500 font-bold block mb-1 text-center whitespace-nowrap">總合表現評分</span>
+                    <span id="detailTotalScore" class="text-4xl sm:text-5xl font-black text-indigo-600 drop-shadow-sm">0</span>
+                </div>
+                <!-- C: 雷達圖 -->
+                <div class="w-[50%] flex justify-center items-center h-[120px] sm:h-[150px] relative px-2">
+                    <canvas id="radarChart"></canvas>
                 </div>
             </div>
             
-            <div class="flex-1 overflow-y-auto pr-2 flex flex-col gap-6">
-                <!-- 雷達圖 -->
-                <div class="w-full max-w-[320px] mx-auto aspect-square">
-                    <canvas id="radarChart"></canvas>
-                </div>
-                
-                <p class="text-sm text-gray-500 text-center border-b pb-2">點擊下方各向度，查看 15 項核心指標的細節描述與配分：</p>
-                
+            <div class="flex-1 overflow-y-auto pr-2 flex flex-col gap-3">
+                <p class="text-xs text-gray-500 text-center border-b pb-2">點擊下方各向度，查看 15 項核心指標的細節描述與配分：</p>
                 <!-- 向度列表 (折疊面板) -->
                 <div id="detailDimensions" class="flex flex-col gap-3 pb-4">
                     <!-- JS 動態生成 -->
@@ -278,7 +268,6 @@
             await setDoc(docRef, { title: chatTitle, speakers, messages, isEnded: isChatEnded, updatedAt: new Date().toISOString() }, { merge: true });
         }
 
-        // ================= 鎖定/解鎖全體對話框 =================
         window.toggleInputLock = () => {
             const input = document.getElementById('chatInput');
             const container = document.getElementById('inputContainer');
@@ -296,7 +285,7 @@
                 emojiBtn.disabled = true;
                 sendBtn.classList.add('opacity-30', 'cursor-not-allowed');
                 emojiBtn.classList.add('opacity-30', 'cursor-not-allowed');
-                if(micIcon) micIcon.style.display = 'none'; // 完全隱藏麥克風避免誤觸
+                if(micIcon) micIcon.style.display = 'none'; 
             } else {
                 input.disabled = false;
                 input.readOnly = false;
@@ -311,7 +300,6 @@
             }
         };
 
-        // --- 介面渲染函式 ---
         window.getAvatarHtml = (s, cls) => s.image ? `<img src="${s.image}" class="w-full h-full object-cover">` : `<span class="${cls}">${s.icon}</span>`;
         window.scrollToBottom = () => { setTimeout(() => { const b = document.getElementById('chatBox'); if(b) b.scrollTo({top: b.scrollHeight, behavior:'smooth'}); }, 100); };
 
@@ -390,7 +378,7 @@
         // ================= 5 向度 15 指標深度 AI 評估與雷達圖系統 =================
         window.currentStatsData = [];
         window.radarChartInstance = null;
-        window.printCharts = []; // 儲存列印用的圖表實例以供清理
+        window.printCharts = []; 
 
         window.openStatsModal = () => {
             const counts = {}; messages.forEach(m => counts[m.speakerId] = (counts[m.speakerId] || 0) + 1);
@@ -401,7 +389,6 @@
                 
             if (window.currentStatsData.length === 0) { alert("目前沒有任何人發言，無法進行評估！"); return; }
             
-            // 點擊即鎖定全體輸入
             if (!isChatEnded) {
                 isChatEnded = true;
                 saveToCloud();
@@ -442,21 +429,53 @@
             window.renderStatsList(true);
             const btn = document.getElementById('aiEvalBtn'); btn.disabled = true; btn.textContent = "🔄 AI 15 項指標深度分析中...";
             
-            // 模擬生成 5 向度 15 指標的高質量評估結果
+            // 建立動態化 AI 評語產生器，區分「固定描述(desc)」與「AI動態評論(comment)」
+            const evaluateInd = (name, desc, baseScore, excellentMsg, goodMsg, averageMsg) => {
+                const score = Math.min(100, Math.max(60, baseScore + Math.floor(Math.random() * 20 - 10)));
+                let comment = "";
+                if (score >= 90) comment = excellentMsg;
+                else if (score >= 80) comment = goodMsg;
+                else comment = averageMsg;
+                return { name, desc, score, comment };
+            };
+
             setTimeout(() => {
                 window.currentStatsData.forEach(s => { 
-                    const genScore = (base) => Math.min(100, Math.max(60, base + Math.floor(Math.random() * 20 - 10)));
                     const baseS = s.count > 2 ? 88 : 75;
                     
                     s.dimensions = [
-                        { name: "一、語意邏輯與內容質量", score: genScore(baseS), indicators: [{name:"指標1(主題一致性)", score:genScore(baseS), comment:"發言能緊扣討論核心。"}, {name:"指標2(脈絡銜接度)", score:genScore(baseS), comment:"能接續他人提問。"}, {name:"指標3(訊息清晰度)", score:genScore(baseS), comment:"語句完整易讀。"}] },
-                        { name: "二、互動時效與參與行為", score: genScore(baseS), indicators: [{name:"指標4(回應潛伏期)", score:genScore(baseS), comment:"回應速度非常快。"}, {name:"指標5(發言密度)", score:genScore(baseS), comment:"頻率適中，無洗版情形。"}, {name:"指標6(話題主導)", score:genScore(baseS), comment:"能適時拋出新想法。"}] },
-                        { name: "三、數位表達與符號素養", score: genScore(baseS), indicators: [{name:"指標7(非語文運用)", score:genScore(baseS), comment:"貼圖表情使用精準。"}, {name:"指標8(功能標籤)", score:genScore(baseS), comment:"熟練掌握通訊功能。"}, {name:"指標9(分段可讀)", score:genScore(baseS), comment:"訊息長度適合螢幕閱讀。"}] },
-                        { name: "四、社交情緒與協作態度", score: genScore(baseS), indicators: [{name:"指標10(情感色彩)", score:genScore(baseS), comment:"討論態度正向積極。"}, {name:"指標11(支持性回饋)", score:genScore(baseS), comment:"有給予同儕鼓勵與肯定。"}, {name:"指標12(衝突處理)", score:genScore(baseS), comment:"討論氣氛融洽和諧。"}] },
-                        { name: "五、語言規範與適切性", score: genScore(baseS), indicators: [{name:"指標13(錯別字與注音)", score:genScore(baseS), comment:"用字精確，無錯字。"}, {name:"指標14(語氣合宜度)", score:genScore(baseS), comment:"使用適當的語氣對話。"}, {name:"指標15(言簡意賅)", score:genScore(baseS), comment:"表達精煉，不拖沓。"}] }
+                        { name: "一、語意邏輯與內容質量", indicators: [
+                            evaluateInd("指標1(主題一致性)", "評估發言是否緊扣討論核心。", baseS, "發言精準切中要點，能帶領討論方向。", "多數時候能維持在主題內，表現平穩。", "較容易發散，建議發言前多扣緊核心。"),
+                            evaluateInd("指標2(脈絡銜接度)", "評估是否能接續他人提問。", baseS, "承先啟後能力極佳，對話流暢。", "能針對同學的問題給予適當的回應。", "多為獨立發言，較少去承接他人的話題。"),
+                            evaluateInd("指標3(訊息清晰度)", "評估語句是否完整易讀。", baseS, "表達清晰透徹，毫無語意模糊的狀況。", "語句通順，基本溝通無礙。", "部分句子較為破碎，需稍加猜測語意。")
+                        ]},
+                        { name: "二、互動時效與參與行為", indicators: [
+                            evaluateInd("指標4(回應潛伏期)", "評估回應速度是否夠快。", baseS, "回覆極為迅速，高度參與對話。", "回應速度正常，能跟上大家節奏。", "較晚才做出回應，容易錯過討論時機。"),
+                            evaluateInd("指標5(發言密度)", "評估頻率是否適中且無洗版。", baseS, "發言節奏掌控極佳，不會過度洗版。", "發言頻率適中，符合一般討論情境。", "發言稍微密集或太少，需注意頻率。"),
+                            evaluateInd("指標6(話題主導)", "評估能否適時拋出新想法。", baseS, "能主動提出新觀點，激發群組思考。", "偶爾能提出想法，多為附和居多。", "多半順著他人的話題走，較少主動提問。")
+                        ]},
+                        { name: "三、數位表達與符號素養", indicators: [
+                            evaluateInd("指標7(非語文運用)", "評估貼圖表情使用是否精準。", baseS, "能完美運用表情貼圖來豐富語氣。", "有使用貼圖輔助，表現中規中矩。", "極少使用貼圖，文字看起來較為生硬。"),
+                            evaluateInd("指標8(功能標籤)", "評估是否熟練掌握通訊功能。", baseS, "非常熟悉各種數位通訊的表達方式。", "具備基本的數位軟體操作概念。", "數位工具使用上看起來較為生疏。"),
+                            evaluateInd("指標9(分段可讀)", "評估訊息長度是否適合閱讀。", baseS, "分段排版極佳，非常適合螢幕閱讀。", "文字長度適中，不會造成閱讀負擔。", "有時句子太長未斷句，影響閱讀體驗。")
+                        ]},
+                        { name: "四、社交情緒與協作態度", indicators: [
+                            evaluateInd("指標10(情感色彩)", "評估討論態度是否正向積極。", baseS, "態度極度正向，能感染群組氣氛。", "態度友善，能維持良好的互動關係。", "發言稍微平淡，可以多展現一點熱情。"),
+                            evaluateInd("指標11(支持性回饋)", "評估是否有給予同儕肯定。", baseS, "經常給予同學鼓勵與讚美，非常棒！", "偶爾會給予同學正向的回饋。", "較少給予同學支持性的言語。"),
+                            evaluateInd("指標12(衝突處理)", "評估討論氣氛是否融洽和諧。", baseS, "能營造極佳的團隊和諧感。", "與同學相處融洽，無任何摩擦。", "溝通上稍嫌直白，需注意團隊氣氛。")
+                        ]},
+                        { name: "五、語言規範與適切性", indicators: [
+                            evaluateInd("指標13(錯別字與注音)", "評估用字是否精確無錯字。", baseS, "用字遣詞極為精準，完全沒有錯別字。", "偶有錯字但不影響整體語意理解。", "錯別字或注音文較多，需多加注意。"),
+                            evaluateInd("指標14(語氣合宜度)", "評估是否使用適當語氣對話。", baseS, "語氣非常得體，充分展現良好禮貌。", "使用的語氣正常合宜。", "語氣有時較為隨便，可稍微調整。"),
+                            evaluateInd("指標15(言簡意賅)", "評估表達是否精煉不拖沓。", baseS, "表達一針見血，非常精煉有重點。", "能用適當的字數把事情交代清楚。", "有時表達稍微冗長，可以再更簡潔些。")
+                        ]}
                     ];
+                    
+                    s.dimensions.forEach(d => {
+                        d.score = Math.round(d.indicators.reduce((a,b)=>a+b.score, 0) / d.indicators.length);
+                    });
                     s.totalScore = Math.round(s.dimensions.reduce((a,b)=>a+b.score, 0) / 5);
-                    s.overallComment = s.totalScore >= 85 ? "數位溝通能力極佳，具備優良的線上協作素養！" : "有參與討論，可試著多給予同儕回應喔！";
+                    s.overallComment = s.totalScore >= 85 ? "數位溝通能力極佳，具備優良的線上協作素養，請繼續保持！" : "有參與討論，已經做得很不錯，下次可試著多給予同儕正向的回應喔！";
                 });
                 window.renderStatsList(); btn.textContent = "✅ 五向度深度評估完成";
             }, 2000);
@@ -466,7 +485,7 @@
         window.openDetailModal = (id) => {
             const s = window.currentStatsData.find(x => x.id === id);
             if (!s || !s.dimensions) return;
-            window.currentDetailId = id; // 儲存當前查看的學生ID，供列印使用
+            window.currentDetailId = id; 
 
             document.getElementById('detailAvatar').innerHTML = getAvatarHtml(s, '');
             document.getElementById('detailName').textContent = s.fullname || s.name;
@@ -493,8 +512,8 @@
                     }]
                 },
                 options: {
-                    responsive: true, maintainAspectRatio: true,
-                    scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, display: false }, pointLabels: { font: { size: 12, weight: 'bold' }, color: '#4B5563' } } },
+                    responsive: true, maintainAspectRatio: false,
+                    scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, display: false }, pointLabels: { font: { size: 11, weight: 'bold' }, color: '#4B5563' } } },
                     plugins: { legend: { display: false } }
                 }
             });
@@ -504,11 +523,17 @@
             s.dimensions.forEach((dim, idx) => {
                 let indicatorsHtml = '';
                 dim.indicators.forEach(ind => {
+                    // 指標：排版為左(名稱+分數) 右(固定描述+動態描述)
                     indicatorsHtml += `
-                        <div class="flex items-baseline gap-2 mb-1.5 leading-snug">
-                            <span class="text-[13px] font-bold text-gray-800 whitespace-nowrap min-w-[130px]">${ind.name}</span>
-                            <span class="text-[14px] font-black text-indigo-600 whitespace-nowrap">${ind.score}<span class="text-[10px] font-normal text-gray-500 ml-0.5">分</span></span>
-                            <span class="text-[12px] text-gray-600 ml-2 border-l-2 border-indigo-100 pl-2">${ind.comment}</span>
+                        <div class="flex items-start gap-3 mb-2.5 pb-2.5 border-b border-gray-100 last:border-0 last:pb-0">
+                            <div class="w-[120px] shrink-0">
+                                <div class="text-[13px] font-bold text-gray-800 leading-tight">${ind.name}</div>
+                                <div class="text-[14px] font-black text-indigo-600 mt-0.5">${ind.score}<span class="text-[10px] font-normal text-gray-500 ml-0.5">分</span></div>
+                            </div>
+                            <div class="flex flex-col border-l-2 border-indigo-200 pl-3 flex-1">
+                                <span class="text-[11px] text-gray-400 mb-1 leading-tight">${ind.desc}</span>
+                                <span class="text-[13px] text-gray-700 font-medium leading-snug">${ind.comment}</span>
+                            </div>
                         </div>
                     `;
                 });
@@ -523,7 +548,7 @@
                             </div>
                         </div>
                         <div id="dim-${idx}" class="accordion-content bg-white">
-                            <div class="p-4 flex flex-col gap-1 border-t border-indigo-50">
+                            <div class="p-4 flex flex-col border-t border-indigo-50">
                                 ${indicatorsHtml}
                             </div>
                         </div>
@@ -549,7 +574,6 @@
         // ================= 🖨️ A4 獨立完美列印系統 (重構支援 Chart.js 離線渲染) =================
         window.triggerPrint = (studentId = null) => {
             let targetStudents = window.currentStatsData;
-            // 如果有指定 ID (從詳細畫面按下列印)，就只印單人；否則印全班
             if (studentId) targetStudents = window.currentStatsData.filter(s => s.id === studentId);
             
             if (targetStudents.length === 0 || !targetStudents[0].dimensions) {
@@ -558,24 +582,28 @@
 
             const printArea = document.getElementById('printArea');
             printArea.innerHTML = '';
-            window.printCharts.forEach(c => c.destroy()); // 清理舊圖表
+            window.printCharts.forEach(c => c.destroy()); 
             window.printCharts = [];
 
             targetStudents.forEach((s, index) => {
-                // 產生 15 個指標的緊湊式排版 (節省A4垂直空間，確保單頁滿版)
                 let dimHtml = '<div class="flex flex-col gap-1.5 mt-2">';
                 s.dimensions.forEach(dim => {
                     let indHtml = dim.indicators.map(ind => `
-                        <div class="flex items-center gap-2 mb-0.5 leading-tight">
-                            <span class="text-[12px] font-bold text-gray-800 whitespace-nowrap min-w-[120px]">${ind.name}</span>
-                            <span class="text-[13px] font-black text-indigo-600 whitespace-nowrap w-[30px]">${ind.score}<span class="text-[9px] font-normal text-gray-500 ml-0.5">分</span></span>
-                            <span class="text-[11px] text-gray-600 ml-1 border-l-2 border-indigo-100 pl-2 truncate">${ind.comment}</span>
+                        <div class="flex items-start gap-2 mb-1.5 pb-1.5 border-b border-gray-100 last:border-0 last:pb-0">
+                            <div class="w-[110px] shrink-0">
+                                <div class="text-[12px] font-bold text-gray-800 leading-tight">${ind.name}</div>
+                                <div class="text-[13px] font-black text-indigo-600 mt-0.5">${ind.score}<span class="text-[9px] font-normal text-gray-500 ml-0.5">分</span></div>
+                            </div>
+                            <div class="flex flex-col border-l-2 border-indigo-200 pl-2 flex-1">
+                                <span class="text-[10px] text-gray-400 mb-0.5 leading-none">${ind.desc}</span>
+                                <span class="text-[12px] text-gray-700 font-medium leading-tight">${ind.comment}</span>
+                            </div>
                         </div>
                     `).join('');
 
                     dimHtml += `
                         <div class="border border-indigo-100 rounded-lg p-2 bg-white shadow-sm print-break-inside-avoid">
-                            <div class="flex justify-between items-center border-b border-indigo-100 pb-1 mb-1 bg-indigo-50/50 px-2 rounded-t-md">
+                            <div class="flex justify-between items-center border-b border-indigo-100 pb-1 mb-1.5 bg-indigo-50/50 px-2 rounded-t-md">
                                 <span class="font-bold text-indigo-800 text-[13px]">${dim.name}</span>
                                 <span class="font-black text-indigo-600 text-[14px]">${dim.score} <span class="text-[9px] font-normal text-gray-500">分</span></span>
                             </div>
@@ -585,39 +613,41 @@
                 });
                 dimHtml += '</div>';
 
-                // 組合完整的單頁 A4 報告 (移除最上方佔空間的標題)
+                // A/B/C 三等分完美排版設計 (專為 A4 打造)
                 const page = document.createElement('div');
-                page.className = 'print-page w-full max-w-[19cm] mx-auto font-sans text-gray-800 bg-white pt-4';
+                page.className = 'print-page w-full max-w-[19cm] mx-auto font-sans text-gray-800 bg-white pt-2';
                 page.innerHTML = `
-                    <div class="flex items-center justify-between border-2 border-indigo-100 rounded-xl p-3 mb-2 bg-indigo-50/20 print-break-inside-avoid">
-                        <div class="flex flex-col items-center justify-center w-[35%] border-r-2 border-indigo-100">
-                            <div class="w-16 h-16 rounded-full border-2 border-white overflow-hidden flex justify-center items-center text-3xl bg-gray-100 shadow-sm mb-1">
+                    <div class="flex items-center justify-between border border-indigo-100 rounded-xl p-3 mb-2 bg-indigo-50/30 print-break-inside-avoid">
+                        <!-- A: 頭像名字 -->
+                        <div class="flex flex-col items-center justify-center w-[25%] border-r border-indigo-200">
+                            <div class="w-14 h-14 rounded-full border-2 border-white overflow-hidden flex justify-center items-center text-2xl bg-gray-100 shadow-sm mb-1">
                                 ${getAvatarHtml(s, '')}
                             </div>
-                            <h2 class="text-xl font-bold text-gray-800">${s.fullname || s.name}</h2>
-                            <div class="text-center mt-1">
-                                <span class="text-[10px] text-gray-500 font-bold block leading-none mb-0.5">總合表現評分</span>
-                                <span class="text-4xl font-black text-indigo-600 leading-none">${s.totalScore}</span>
-                            </div>
+                            <h2 class="text-lg font-bold text-gray-800">${s.fullname || s.name}</h2>
                         </div>
-                        <div class="w-[65%] flex justify-center items-center h-[160px]">
+                        <!-- B: 總合評分 -->
+                        <div class="flex flex-col items-center justify-center w-[25%] border-r border-indigo-200 px-2">
+                            <span class="text-[10px] text-gray-500 font-bold block leading-none mb-1">總合表現評分</span>
+                            <span class="text-5xl font-black text-indigo-600 leading-none">${s.totalScore}</span>
+                        </div>
+                        <!-- C: 雷達圖 -->
+                        <div class="w-[50%] flex justify-center items-center h-[130px]">
                             <canvas id="printRadar-${index}"></canvas>
                         </div>
                     </div>
                     
                     ${dimHtml}
                     
-                    <div class="mt-3 p-3 bg-indigo-50 rounded-lg text-sm font-bold text-indigo-900 border border-indigo-200 print-break-inside-avoid flex gap-2 items-start">
+                    <div class="mt-2 p-3 bg-indigo-50 rounded-lg text-sm font-bold text-indigo-900 border border-indigo-200 print-break-inside-avoid flex gap-2 items-start">
                         <span class="text-lg leading-none mt-0.5">💡</span>
                         <div>
-                            <div class="text-[11px] text-indigo-500 mb-0.5 leading-none">老師總結與建議：</div>
+                            <div class="text-[11px] text-indigo-500 mb-0.5 leading-none">AI 總結與建議：</div>
                             <div class="text-[13px] font-medium leading-snug">${s.overallComment}</div>
                         </div>
                     </div>
                 `;
                 printArea.appendChild(page);
 
-                // 渲染列印專用的靜態圖表
                 const ctx = document.getElementById(`printRadar-${index}`).getContext('2d');
                 const labels = s.dimensions.map(d => d.name.substring(2, 6)); 
                 const dataScores = s.dimensions.map(d => d.score);
@@ -631,23 +661,22 @@
                         }]
                     },
                     options: {
-                        animation: false, // 關閉動畫確保列印前瞬間完成渲染
+                        animation: false, 
                         responsive: true, maintainAspectRatio: false,
-                        scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, display: false }, pointLabels: { font: { size: 10, weight: 'bold' }, color: '#4B5563' } } },
+                        scales: { r: { min: 0, max: 100, ticks: { stepSize: 20, display: false }, pointLabels: { font: { size: 9, weight: 'bold' }, color: '#4B5563' } } },
                         plugins: { legend: { display: false } }
                     }
                 });
                 window.printCharts.push(chart);
             });
 
-            // 延遲一點點時間確保 Canvas 畫完，再呼叫系統列印對話框
             setTimeout(() => { window.print(); }, 800);
         };
 
         window.clearChat = () => { 
             if(confirm("確定要清空所有訊息，並解除全班的發言鎖定嗎？")) { 
                 messages = []; 
-                isChatEnded = false; // 解除鎖定
+                isChatEnded = false;
                 window.toggleInputLock();
                 renderMessages(); 
                 saveToCloud(); 
@@ -690,7 +719,7 @@
                         const data = JSON.parse(evt.target.result);
                         if (data.messages && data.speakers) {
                             chatTitle = data.title || "載入的對話"; speakers = data.speakers; messages = data.messages;
-                            isChatEnded = data.isEnded || false; // 同步還原鎖定狀態
+                            isChatEnded = data.isEnded || false;
                             document.getElementById('chatTitle').textContent = chatTitle; document.getElementById('memberCount').textContent = speakers.length;
                             renderSidebarSpeakers(); renderMessages(); window.scrollToBottom(); window.toggleInputLock(); saveToCloud(); 
                             alert("✅ 成功載入對話紀錄！所有連線設備已同步更新。");
@@ -706,7 +735,7 @@
                 '❤️','🧡','💛','💚','💙','🩵','💜','🤎','🖤','🤍','💔','❣️','💕','💞','💓','💗','💖','💘','💝','✨','🌟','💫','💥','💢','💦','💨','💬','💭','💤',
                 '🎉','🎊','🔥','💯','❓','❗️','❕','❔','✅','❌','⭕','⛔','📛','🚫','🆗','🆙','🆒','🆕','🆓',
                 '🐶','🐱','🐭','🐹','🐰','🦊','🐻','🐼','🐻‍❄️','🐨','🐯','🦁','🐮','🐷','🐸','🐵','🐔','🐧','🐦','🐤','🦆','🦅','🦉','🦇','🐺','🐗','🐴','🦄','🐝','🐛','🦋',
-                '🍏','🍎','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','🌽','🥕','🥔','🍠','🥐','🥯','🍞','🥖','🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🥪','🌮','🥗','🥘','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🍤','🍙','🍚','🍘','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪',
+                '🍏','🍎','🍊','🍋','🍌','🍉','🍇','🍓','🫐','🍈','🍒','🍑','🥭','🍍','🥥','🥝','🍅','🍆','🥑','🥦','🥬','🥒','定的🌽','🥕','🥔','🍠','🥐','🥯','🍞','🥖','🧀','🥚','🍳','🥞','🧇','🥓','🥩','🍗','🍖','🌭','🍔','🍟','🍕','🥪','🌮','🥗','🥘','🍝','🍜','🍲','🍛','🍣','🍱','🥟','🍤','🍙','🍚','🍘','🍢','🍡','🍧','🍨','🍦','🥧','🧁','🍰','🎂','🍮','🍭','🍬','🍫','🍿','🍩','🍪',
                 '🚗','🚕','🚙','🚌','🚎','🏎','🚓','🚑','🚒','🚐','🚚','🚛','🚜','🏫','☀️','🌤','⛅️','🌥','☁️','🌦','🌧','⛈','🌩','🌨','❄️','☃️','⛄️','🌬','💨','☔️'
             ];
             ems.forEach(e => { const span = document.createElement('span'); span.className = "cursor-pointer p-1 text-2xl hover:scale-125 transition-transform"; span.textContent = e; span.onclick = () => { if(!isChatEnded){ i.value += e; window.toggleSendIcon(); } }; document.getElementById('emojiGrid').appendChild(span); });
